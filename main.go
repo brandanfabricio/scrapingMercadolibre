@@ -30,8 +30,10 @@ func GetDataMercadolibre(w http.ResponseWriter, r *http.Request) {
 
 	search := r.URL.Query().Get("search")
 	marca := r.URL.Query().Get("marca")
+	categoria := r.URL.Query().Get("categoria")
+	genero := r.URL.Query().Get("genero")
 
-	fmt.Println(search)
+	fmt.Println(search + " " + marca + " " + categoria)
 
 	// page := rod.New().MustConnect().MustPage("https://listado.mercadolibre.com.ar/mochilas-hombre#D[A:mochilas%20hombre%20]")
 
@@ -56,7 +58,7 @@ func GetDataMercadolibre(w http.ResponseWriter, r *http.Request) {
 	} else {
 
 		fmt.Println("Buscando Marca")
-		link := getMarc(page, marca)
+		link := getMarc(page, marca, categoria, genero)
 		fmt.Println(link)
 		if link != "" {
 
@@ -125,61 +127,146 @@ func scraping(page *rod.Page) []Items {
 	}
 	return listItems
 }
-func getMarc(page *rod.Page, marca string) string {
+func getMarc(page *rod.Page, marca string, categoria, genero string) string {
 
 	Containerfilters := page.MustElement(".ui-search-filter-groups")
 
 	filters := Containerfilters.MustElements(".ui-search-filter-dl")
-
+	fmt.Println("Buscnado filtros")
 	var linkFilter string
 	for _, item := range filters {
+		// fmt.Println(item.MustElements("h3.ui-search-filter-dt-title")[0].MustText())
 
-		if len(item.MustElements("h3.ui-search-filter-dt-title")) > 0 && item.MustElements("h3.ui-search-filter-dt-title")[0].MustText() == "Marca" {
+		if len(item.MustElements("h3.ui-search-filter-dt-title")) > 0 {
 
-			fmt.Println(item.MustText())
-			link, err := item.Element("a.ui-search-modal__link")
-			if err != nil {
+			filtro := item.MustElements("h3.ui-search-filter-dt-title")[0].MustText()
+			// fmt.Println(filtro)
+			if filtro == "Género" || filtro == "Genero" {
 
-				Listlink := item.MustElements("a.ui-search-link")
+				link, err := item.Element("a.ui-search-modal__link")
 
-				for _, modalLink := range Listlink {
+				if err != nil {
+					fmt.Println("error")
+					Listlink := item.MustElements("a.ui-search-link")
 
-					targ := removeAccents(strings.ToLower(modalLink.MustText()))
-					fmt.Println(targ)
-					marca := removeAccents(strings.ToLower(marca))
-					if strings.Contains(targ, marca) {
-						link := modalLink.MustAttribute("href")
+					for _, linkgenero := range Listlink {
 
-						linkFilter = *link
-						break
+						targ := removeAccents(strings.ToLower(linkgenero.MustElement("span.ui-search-filter-name").MustText()))
+						genero = removeAccents(strings.ToLower(genero))
+
+						if strings.Contains(targ, genero) || strings.Contains(targ+"s", genero) {
+
+							fmt.Println("antes del ewrr")
+							fmt.Println(linkgenero)
+
+							item = linkgenero.MustClick()
+
+							// linkgenero.MustClick()
+							// linkFilter = *link
+
+							if linkgenero == nil {
+								fmt.Println("linkgenero es nil, no se puede hacer click")
+							} else {
+								link := linkgenero.MustAttribute("href") // Descomentado
+								fmt.Println(*link)
+								linkFilter = *link
+
+							}
+						}
 
 					}
+
+					// fmt.Println(Listlink)
+					// link.MustClick()
+					// time.Sleep(1 * time.Second)
+
+				} else {
+					fmt.Println(link)
+
 				}
-			} else {
-				link.MustClick()
-				time.Sleep(1 * time.Second)
-				modal := page.MustElement("#modal")
-				// ui-search-search-modal-list
-				// .ui-search-search-modal-grid-columns
-				modalItem := modal.MustElements("a.ui-search-link")
-				for _, modalLink := range modalItem {
-					targ := removeAccents(strings.ToLower(modalLink.MustText()))
-					marca := removeAccents(strings.ToLower(marca))
-					if strings.Contains(targ, marca) {
-						link := modalLink.MustAttribute("href")
-						linkFilter = *link
-						break
+
+			}
+			if filtro == "Categorías" {
+				link, err := item.Element("a.ui-search-modal__link")
+				if err != nil {
+					fmt.Println("error")
+					Listlink := item.MustElements("a.ui-search-link")
+
+					for _, categoriLink := range Listlink {
+
+						targ := removeAccents(strings.ToLower(categoriLink.MustElement("span.ui-search-filter-name").MustText()))
+						// categoria := removeAccents(strings.ToLower(categoria))
+
+						if strings.Contains(targ, categoria) {
+							categoriLink.MustClick()
+
+						}
 
 					}
+
+					// fmt.Println(Listlink)
+					// link.MustClick()
+					// time.Sleep(1 * time.Second)
+
+				} else {
+					fmt.Println(link)
+
 				}
 			}
 
-			break
+			if filtro == "Marca" {
 
-			// linkFilter = link.MustAttribute("href")
+				link, err := item.Element("a.ui-search-modal__link")
+				if err != nil {
+
+					Listlink := item.MustElements("a.ui-search-link")
+
+					for _, modalLink := range Listlink {
+						fmt.Println("cuscando en el listado")
+
+						targ := removeAccents(strings.ToLower(modalLink.MustText()))
+						marcas := removeAccents(strings.ToLower(marca))
+						marca := strings.Split(marcas, " ")
+						for _, marc := range marca {
+							if strings.Contains(targ, marc) {
+								link := modalLink.MustAttribute("href")
+
+								linkFilter = *link
+								break
+
+							}
+						}
+
+					}
+				} else {
+					link.MustClick()
+					time.Sleep(1 * time.Second)
+					fmt.Println("abriendo modal")
+					modal := page.MustElement("#modal")
+					// ui-search-search-modal-list
+					// .ui-search-search-modal-grid-columns
+					modalItem := modal.MustElements("a.ui-search-link")
+					for _, modalLink := range modalItem {
+						targ := removeAccents(strings.ToLower(modalLink.MustText()))
+						marca := removeAccents(strings.ToLower(marca))
+						if strings.Contains(targ, marca) {
+							link := modalLink.MustAttribute("href")
+							linkFilter = *link
+							break
+
+						}
+					}
+				}
+
+				break
+
+				// linkFilter = link.MustAttribute("href")
+			}
 		}
 
 	}
+	fmt.Println("aki2")
+
 	return linkFilter
 
 	// page = browser.MustPage(*linkFilter)
