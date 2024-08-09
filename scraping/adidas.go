@@ -1,7 +1,6 @@
 package scraping
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -11,16 +10,16 @@ import (
 	"github.com/go-rod/rod/lib/launcher"
 )
 
-func GetDataAdidas(w http.ResponseWriter, r *http.Request) {
+func GetDataAdidas(w http.ResponseWriter, r *http.Request) []Items {
 
 	coditm := r.URL.Query().Get("search")
 	// marca := r.URL.Query().Get("marca")
 	categoria := r.URL.Query().Get("categoria")
-	// genero := r.URL.Query().Get("genero")
+	genero := r.URL.Query().Get("genero")
 	// talle := r.URL.Query().Get("Talle")
 	// material := r.URL.Query().Get("material")
 
-	search := fmt.Sprintf("%s %s", categoria, coditm)
+	search := fmt.Sprintf("%s %s %s", categoria, coditm, genero)
 
 	fmt.Println(search)
 	url, err := launcher.New().Headless(false).Launch()
@@ -52,14 +51,14 @@ func GetDataAdidas(w http.ResponseWriter, r *http.Request) {
 	page.MustWaitLoad()
 	// time.Sleep(2 * time.Second)
 
+	// aplicar filtro
+
 	// var listItems []Items
+
 	listItems := srapingAdidas(page)
+	fmt.Println("fin adidas")
 
-	fmt.Println("fin")
-	w.Header().Set("Content-Type", "application/json")
-
-	// fmt.Fprintf(w, "Buscando %s", &jsonData)
-	json.NewEncoder(w).Encode(listItems)
+	return listItems
 
 }
 
@@ -92,6 +91,15 @@ func srapingAdidas(page *rod.Page) []Items {
 	// Wr("ht/prueba",)
 
 	for _, elemts := range listProduct {
+
+		fmt.Println(elemts)
+
+		verifix := elemts.MustAttribute("data-index")
+
+		if *verifix == "-1" {
+			fmt.Println(*verifix)
+			continue
+		}
 
 		var item Items
 		urlLinks := elemts.MustElement(".glass-product-card__assets-link")

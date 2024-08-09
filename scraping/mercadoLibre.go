@@ -1,7 +1,6 @@
 package scraping
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -13,7 +12,7 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-func GetDataMercadolibre(w http.ResponseWriter, r *http.Request) {
+func GetDataMercadolibre(w http.ResponseWriter, r *http.Request) []Items {
 
 	coditm := r.URL.Query().Get("search")
 	marca := r.URL.Query().Get("marca")
@@ -22,7 +21,14 @@ func GetDataMercadolibre(w http.ResponseWriter, r *http.Request) {
 	talle := r.URL.Query().Get("Talle")
 	material := r.URL.Query().Get("material")
 
-	search := fmt.Sprintf("%s %s %s %s %s %s", coditm, marca, categoria, material, genero, talle)
+	search := fmt.Sprintf("%s %s %s %s", categoria, coditm, marca, genero)
+
+	if material == "SINTETICO" {
+		material = "Sintético"
+	}
+	if marca == "DISTRINANDO (CHOCOLATE)" {
+		material = "CHOCOLATE"
+	}
 
 	fmt.Println(search)
 
@@ -51,7 +57,7 @@ func GetDataMercadolibre(w http.ResponseWriter, r *http.Request) {
 
 	var listItems []Items
 
-	fils := []string{"Marca:" + marca, "Género:" + genero, "Categorías:" + categoria, "Talle:" + talle}
+	fils := []string{"Marca:" + marca, "Género:" + genero, "Categorías:" + categoria, "Talle:" + talle, "Material principal:" + material}
 
 	getMarc(page, fils)
 	fmt.Println("Iniciado scraping")
@@ -82,16 +88,18 @@ func GetDataMercadolibre(w http.ResponseWriter, r *http.Request) {
 	*/
 	// // Guardar los datos en un archivo JSON
 	fmt.Println("fin")
-	w.Header().Set("Content-Type", "application/json")
+	return listItems
+	// w.Header().Set("Content-Type", "application/json")
 
 	// fmt.Fprintf(w, "Buscando %s", &jsonData)
-	json.NewEncoder(w).Encode(listItems)
+	// json.NewEncoder(w).Encode(listItems)
 
 }
 
 func scraping(page *rod.Page) []Items {
 	page.MustWaitLoad()
 	listItems := []Items{}
+	time.Sleep(2 * time.Second)
 
 	containe := page.MustElement(".ui-search-layout")
 	element := containe.MustElements(".ui-search-layout__item")
@@ -163,11 +171,9 @@ func scraping(page *rod.Page) []Items {
 func getMarc(page *rod.Page, fils []string) {
 
 	fmt.Println("Buscnado filtros")
-
 	for _, fil := range fils {
 		fil := strings.Split(fil, ":")
 		key, search := fil[0], fil[1]
-		fmt.Printf("%s = %s \n", key, search)
 		if search != "" {
 			page = applyFilter(page, key, search)
 		}

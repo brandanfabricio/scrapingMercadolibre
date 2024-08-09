@@ -1,7 +1,6 @@
 package scraping
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -9,7 +8,7 @@ import (
 	"github.com/go-rod/rod/lib/launcher"
 )
 
-func GetDataPuma(w http.ResponseWriter, r *http.Request) {
+func GetDataPuma(w http.ResponseWriter, r *http.Request) []Items {
 
 	coditm := r.URL.Query().Get("search")
 	// marca := r.URL.Query().Get("marca")
@@ -27,7 +26,7 @@ func GetDataPuma(w http.ResponseWriter, r *http.Request) {
 		genero = ""
 	}
 
-	search := fmt.Sprintf("%s %s %s", categoria, coditm, genero)
+	search := fmt.Sprintf("%s %s ", categoria, coditm)
 
 	fmt.Println(search)
 
@@ -54,14 +53,15 @@ func GetDataPuma(w http.ResponseWriter, r *http.Request) {
 	// scrapin
 	listItems := srapingPuma(page)
 
+	// fmt.Println("fin")
+	// w.Header().Set("Content-Type", "application/json")
+
+	// // fmt.Fprintf(w, "Buscando %s", &jsonData)
+	// json.NewEncoder(w).Encode(listItems)
+
+	// //
 	fmt.Println("fin")
-	w.Header().Set("Content-Type", "application/json")
-
-	// fmt.Fprintf(w, "Buscando %s", &jsonData)
-	json.NewEncoder(w).Encode(listItems)
-
-	//
-
+	return listItems
 }
 
 func srapingPuma(page *rod.Page) []Items {

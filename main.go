@@ -7,9 +7,10 @@ import (
 
 func main() {
 
-	http.HandleFunc("GET /api/mercado-libre", scraping.GetDataMercadolibre)
-	http.HandleFunc("GET /api/puma", scraping.GetDataPuma)
-	http.HandleFunc("GET /api/adidas", scraping.GetDataAdidas)
+	// http.HandleFunc("GET /api/mercado-libre", scraping.GetDataMercadolibre)
+	// http.HandleFunc("GET /api/puma", scraping.GetDataPuma)
+	// http.HandleFunc("GET /api/adidas", scraping.GetDataAdidas)
+	http.HandleFunc("GET /api/scraping", scraping.WebScraping)
 
 	http.ListenAndServe(":3000", AddCORSHeaders(http.DefaultServeMux))
 
