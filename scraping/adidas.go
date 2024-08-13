@@ -12,16 +12,12 @@ import (
 
 func GetDataAdidas(w http.ResponseWriter, r *http.Request) []Items {
 
-	coditm := r.URL.Query().Get("search")
-	// marca := r.URL.Query().Get("marca")
-	categoria := r.URL.Query().Get("categoria")
-	genero := r.URL.Query().Get("genero")
-	// talle := r.URL.Query().Get("Talle")
-	// material := r.URL.Query().Get("material")
+	proveedor := r.URL.Query().Get("proveedor")
 
-	search := fmt.Sprintf("%s %s %s", categoria, coditm, genero)
+	search := fmt.Sprintf("https://www.adidas.com.ar/search?q=%s", proveedor)
 
 	fmt.Println(search)
+
 	url, err := launcher.New().Headless(false).Launch()
 	if err != nil {
 		fmt.Println("Erorrrrrrrr")
@@ -30,14 +26,12 @@ func GetDataAdidas(w http.ResponseWriter, r *http.Request) []Items {
 	}
 	browser := rod.New().ControlURL(url).MustConnect() //
 	defer browser.Close()
+
 	fmt.Println("entrando en Adidas ")
-	page := browser.MustPage("https://www.adidas.com.ar/")
-	// Llenar el formulario y hacer clic en el botón de búsqueda
 
-	page.MustElement("#glass-gdpr-default-consent-accept-button").MustClick()
+	page := browser.MustPage(search)
 
-	page.MustElement("._input_1f3oz_13").MustInput(search)
-	time.Sleep(1 * time.Second)
+	// page.MustElement("#glass-gdpr-default-consent-accept-button").MustClick()
 
 	// page.MustElement("._icon_1f3oz_44").MustClick()
 
@@ -72,6 +66,8 @@ func srapingAdidas(page *rod.Page) []Items {
 
 	containerPage, err := page.Elements(".plp-grid___1FP1J")
 
+	fmt.Println(containerPage)
+
 	if err != nil {
 		fmt.Println("No hay datos")
 		return []Items{}
@@ -79,69 +75,116 @@ func srapingAdidas(page *rod.Page) []Items {
 	}
 
 	if len(containerPage) <= 0 {
-		return []Items{}
-	}
+		fmt.Println("fillllasdasd")
 
-	listProduct, err := containerPage.First().Elements("div.grid-item")
-
-	if err != nil {
-		fmt.Println("No hay datos")
-		return []Items{}
-	}
-	// Wr("ht/prueba",)
-
-	for _, elemts := range listProduct {
-
-		fmt.Println(elemts)
-
-		verifix := elemts.MustAttribute("data-index")
-
-		if *verifix == "-1" {
-			fmt.Println(*verifix)
-			continue
-		}
-
+		containerPage, err := page.Elements(".content-wrapper___3TFwT")
+		fmt.Println("dos")
+		fmt.Println(containerPage)
 		var item Items
-		urlLinks := elemts.MustElement(".glass-product-card__assets-link")
-
-		links := urlLinks.MustAttribute("href")
-
-		// fmt.Println(*links)
-		item.Url = *links
-
-		title := elemts.MustElement(".glass-product-card__title").MustText()
-		item.Title = title
-
-		prices, err := elemts.Element(".gl-price-item")
-
-		price := ""
 		if err != nil {
-			fmt.Println("Erro")
-			price = ""
+			fmt.Println("No hay datos")
+			return []Items{}
+
+		}
+
+		if len(containerPage) <= 0 {
+
+			return []Items{}
+
 		} else {
-			price = prices.MustText()
+			container := containerPage[0]
+
+			title := container.MustElement("h1.name___120FN").MustText()
+			item.Title = title
+			price := container.MustElement("div.product-price___2Mip5").MustText()
+			item.Precio = price[1:]
+
+			item.Url = page.MustInfo().URL
+			item.Marca = "Adidas"
+			item.Vendedor = "Adidas"
+
+			var ListLinksImg []string
+			constainerImages := container.MustElement(".image-grid___1JN2z")
+
+			fmt.Println(constainerImages)
+
+			linksImgs := constainerImages.MustElements("img")
+
+			for _, img := range linksImgs {
+				fmt.Println(img)
+				link := img.MustAttribute("src")
+
+				ListLinksImg = append(ListLinksImg, *link)
+			}
+
+			item.Imagenes = ListLinksImg
+
+			listItems = append(listItems, item)
 		}
-		item.Precio = price
 
-		item.Marca = "Adidas"
-		item.Vendedor = "Adidas"
+	} else {
 
-		var listLinksImg []string
-		linksImg := elemts.MustElements("img.product-card-image")
+		listProduct, err := containerPage.First().Elements("div.grid-item")
 
-		for _, img := range linksImg {
-
-			link := img.MustAttribute("src")
-
-			listLinksImg = append(listLinksImg, *link)
-
+		if err != nil {
+			fmt.Println("No hay datos")
+			return []Items{}
 		}
+		// Wr("ht/prueba",)
 
-		item.Imagenes = listLinksImg
+		for _, elemts := range listProduct {
 
-		listItems = append(listItems, item)
+			fmt.Println(elemts)
 
-		// fmt.Println(Items)
+			verifix := elemts.MustAttribute("data-index")
+
+			if *verifix == "-1" {
+				fmt.Println(*verifix)
+				continue
+			}
+
+			var item Items
+			urlLinks := elemts.MustElement(".glass-product-card__assets-link")
+
+			links := urlLinks.MustAttribute("href")
+
+			// fmt.Println(*links)
+			item.Url = *links
+
+			title := elemts.MustElement(".glass-product-card__title").MustText()
+			item.Title = title
+
+			prices, err := elemts.Element(".gl-price-item")
+
+			price := ""
+			if err != nil {
+				fmt.Println("Erro")
+				price = ""
+			} else {
+				price = prices.MustText()
+			}
+			item.Precio = price
+
+			item.Marca = "Adidas"
+			item.Vendedor = "Adidas"
+
+			var listLinksImg []string
+			linksImg := elemts.MustElements("img.product-card-image")
+
+			for _, img := range linksImg {
+
+				link := img.MustAttribute("src")
+
+				listLinksImg = append(listLinksImg, *link)
+
+			}
+
+			item.Imagenes = listLinksImg
+
+			listItems = append(listItems, item)
+
+			// fmt.Println(Items)
+		}
 	}
 
 	return listItems

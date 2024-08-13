@@ -3,6 +3,7 @@ package scraping
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
@@ -10,25 +11,14 @@ import (
 
 func GetDataPuma(w http.ResponseWriter, r *http.Request) []Items {
 
-	coditm := r.URL.Query().Get("search")
-	// marca := r.URL.Query().Get("marca")
-	categoria := r.URL.Query().Get("categoria")
-	genero := r.URL.Query().Get("genero")
-	// talle := r.URL.Query().Get("Talle")
-	// material := r.URL.Query().Get("material")
+	proveedor := r.URL.Query().Get("proveedor")
+	color := r.URL.Query().Get("color")
 
-	// search := fmt.Sprintf("%s %s %s %s %s %s", coditm, marca, categoria, material, genero, talle)
+	color = color[1:]
 
-	if genero == "DAMAS" {
-		genero = "Mujer"
-	}
-	if genero == "UNISEX" {
-		genero = ""
-	}
+	urlSearch := fmt.Sprintf("https://ar.puma.com/segmentifysearch?q=%s_%s", proveedor, color)
 
-	search := fmt.Sprintf("%s %s ", categoria, coditm)
-
-	fmt.Println(search)
+	fmt.Println(urlSearch)
 
 	url, err := launcher.New().Headless(false).Launch()
 	if err != nil {
@@ -41,11 +31,9 @@ func GetDataPuma(w http.ResponseWriter, r *http.Request) []Items {
 	defer browser.Close()
 
 	fmt.Println("entrando en Puma ")
-	page := browser.MustPage("https://ar.puma.com/")
+	page := browser.MustPage(urlSearch)
+	time.Sleep(5 * time.Second) // Esperar antes de intentar nuevamente
 
-	// Llenar el formulario y hacer clic en el botón de búsqueda
-	page.MustElement("#search-field").MustInput(search)
-	page.MustElement(".SearchField-SearchFieldIcon").MustClick()
 	page.MustWaitLoad()
 
 	// aplicar filtros
@@ -62,6 +50,7 @@ func GetDataPuma(w http.ResponseWriter, r *http.Request) []Items {
 	// //
 	fmt.Println("fin")
 	return listItems
+
 }
 
 func srapingPuma(page *rod.Page) []Items {
