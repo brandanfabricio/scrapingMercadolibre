@@ -9,12 +9,10 @@ import (
 func WebScraping(w http.ResponseWriter, r *http.Request) {
 
 	mercadolibreItem := GetDataMercadolibre(w, r)
-	pumaItem := GetDataPuma(w, r)
-	nikeItem := GetDataNike(w, r)
-	adidaItem := GetDataAdidas(w, r)
-	// hola
-	// pumaItem := []Items{}
-	// adidaItem := []Items{}
+	// pumaItem := GetDataPuma(w, r)
+	pumaItem := []Items{}
+	// adidaItem := GetDataAdidas(w, r)
+	adidaItem := []Items{}
 	// mercadolibreItem := []Items{}
 
 	data := map[string]interface{}{

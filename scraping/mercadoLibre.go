@@ -35,7 +35,7 @@ func GetDataMercadolibre(w http.ResponseWriter, r *http.Request) []Items {
 	// page := rod.New().MustConnect().MustPage("https://listado.mercadolibre.com.ar/mochilas-hombre#D[A:mochilas%20hombre%20]")
 
 	// Launch a headless browser
-	url, err := launcher.New().Headless(false).Launch()
+	url, err := launcher.New().Headless(true).Launch()
 	if err != nil {
 		fmt.Println("Erorrrrrrrr")
 		fmt.Println(err)
