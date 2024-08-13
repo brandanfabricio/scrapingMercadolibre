@@ -25,7 +25,7 @@ func GetDataNike(w http.ResponseWriter, r *http.Request) []Items {
 
 	// }
 	url := launcher.New().
-		Headless(false). // Ejecutar en modo no-headless para ser menos detectable
+		Headless(true).  // Ejecutar en modo no-headless para ser menos detectable
 		NoSandbox(true). // Omitir la caja de arena para evitar detección
 		Leakless(false). // Desactivar los argumentos que revelan el modo headless
 		Devtools(true).  // Permitir herramientas de desarrollador para parecer más real

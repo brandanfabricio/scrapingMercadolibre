@@ -18,11 +18,10 @@ func GetDataAdidas(w http.ResponseWriter, r *http.Request) []Items {
 
 	fmt.Println(search)
 
-	url, err := launcher.New().Headless(false).Launch()
+	url, err := launcher.New().Headless(true).Launch()
 	if err != nil {
 		fmt.Println("Erorrrrrrrr")
 		fmt.Println(err)
-
 	}
 	browser := rod.New().ControlURL(url).MustConnect() //
 	defer browser.Close()
@@ -65,73 +64,54 @@ func srapingAdidas(page *rod.Page) []Items {
 	fmt.Println("iniciando scraping")
 
 	containerPage, err := page.Elements(".plp-grid___1FP1J")
-
-	fmt.Println(containerPage)
-
 	if err != nil {
 		fmt.Println("No hay datos")
 		return []Items{}
-
 	}
-
 	if len(containerPage) <= 0 {
-		fmt.Println("fillllasdasd")
-
 		containerPage, err := page.Elements(".content-wrapper___3TFwT")
-		fmt.Println("dos")
-		fmt.Println(containerPage)
 		var item Items
 		if err != nil {
 			fmt.Println("No hay datos")
 			return []Items{}
-
 		}
 
 		if len(containerPage) <= 0 {
-
 			return []Items{}
 
 		} else {
 			container := containerPage[0]
-
 			title := container.MustElement("h1.name___120FN").MustText()
 			item.Title = title
 			price := container.MustElement("div.product-price___2Mip5").MustText()
 			item.Precio = price[1:]
-
 			item.Url = page.MustInfo().URL
 			item.Marca = "Adidas"
 			item.Vendedor = "Adidas"
 
 			var ListLinksImg []string
 			constainerImages := container.MustElement(".image-grid___1JN2z")
-
-			fmt.Println(constainerImages)
-
 			linksImgs := constainerImages.MustElements("img")
 
-			for _, img := range linksImgs {
-				fmt.Println(img)
+			for i, img := range linksImgs {
+				if i+1 >= 4 {
+					break
+				}
 				link := img.MustAttribute("src")
-
 				ListLinksImg = append(ListLinksImg, *link)
 			}
 
 			item.Imagenes = ListLinksImg
-
 			listItems = append(listItems, item)
 		}
 
 	} else {
-
 		listProduct, err := containerPage.First().Elements("div.grid-item")
-
 		if err != nil {
 			fmt.Println("No hay datos")
 			return []Items{}
 		}
 		// Wr("ht/prueba",)
-
 		for _, elemts := range listProduct {
 
 			fmt.Println(elemts)
