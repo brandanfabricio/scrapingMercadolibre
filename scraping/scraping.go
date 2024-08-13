@@ -12,7 +12,7 @@ func WebScraping(w http.ResponseWriter, r *http.Request) {
 	pumaItem := GetDataPuma(w, r)
 	nikeItem := GetDataNike(w, r)
 	adidaItem := GetDataAdidas(w, r)
-
+	// hola
 	// pumaItem := []Items{}
 	// adidaItem := []Items{}
 	// mercadolibreItem := []Items{}
