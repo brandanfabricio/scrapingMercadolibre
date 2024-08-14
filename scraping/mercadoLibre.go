@@ -118,7 +118,6 @@ func GetDataMercadolibre(w http.ResponseWriter, r *http.Request) []Items {
 func scraping(page *rod.Page, search string) []Items {
 	page.MustWaitLoad()
 	listItems := []Items{}
-	time.Sleep(2 * time.Second)
 
 	containe := page.MustElement(".ui-search-layout")
 	element := containe.MustElements(".ui-search-layout__item")
@@ -267,7 +266,6 @@ func applyFilter(page *rod.Page, key, filter string) *rod.Page {
 				}
 			}
 		}
-		time.Sleep(2 * time.Second) // Esperar antes de intentar nuevamente
 	}
 
 	fmt.Printf("No se pudo aplicar el filtro: %s = %s\n", key, filter)

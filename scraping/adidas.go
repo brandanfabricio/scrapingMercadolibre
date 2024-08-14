@@ -13,10 +13,17 @@ import (
 func GetDataAdidas(w http.ResponseWriter, r *http.Request) []Items {
 
 	proveedor := r.URL.Query().Get("proveedor")
+	search := r.URL.Query().Get("search")
+	var urlSearch string
+	if proveedor != "" {
 
-	search := fmt.Sprintf("https://www.adidas.com.ar/search?q=%s", proveedor)
+		urlSearch = fmt.Sprintf("https://www.adidas.com.ar/search?q=%s", search)
+	} else {
+		urlSearch = fmt.Sprintf("https://www.adidas.com.ar/search?q=%s", proveedor)
 
-	fmt.Println(search)
+	}
+
+	fmt.Println(urlSearch)
 
 	url, err := launcher.New().Headless(true).Launch()
 	if err != nil {
@@ -28,7 +35,7 @@ func GetDataAdidas(w http.ResponseWriter, r *http.Request) []Items {
 
 	fmt.Println("entrando en Adidas ")
 
-	page := browser.MustPage(search)
+	page := browser.MustPage(urlSearch)
 
 	// page.MustElement("#glass-gdpr-default-consent-accept-button").MustClick()
 
