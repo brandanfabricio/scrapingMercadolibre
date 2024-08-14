@@ -34,6 +34,7 @@ func WebScraping(w http.ResponseWriter, r *http.Request) {
 
 }
 */
+// hola
 func WebScraping(w http.ResponseWriter, r *http.Request) {
 	var wg sync.WaitGroup
 	resultChan := make(chan map[string]interface{}, 4)
