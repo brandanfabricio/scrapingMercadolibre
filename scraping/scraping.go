@@ -4,16 +4,27 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 )
 
+/*
 func WebScraping(w http.ResponseWriter, r *http.Request) {
 
 	mercadolibreItem := GetDataMercadolibre(w, r)
 	// pumaItem := GetDataPuma(w, r)
+<<<<<<< HEAD
 	pumaItem := []Items{}
 	// adidaItem := GetDataAdidas(w, r)
 	adidaItem := []Items{}
 	// mercadolibreItem := []Items{}
+=======
+	// nikeItem := GetDataNike(w, r)
+	adidaItem := GetDataAdidas(w, r)
+	// // hola
+	pumaItem := []Items{}
+	// adidaItem := []Items{}
+	nikeItem := []Items{}
+>>>>>>> 35c02612185f503e82e5bbfadc5a806d09462b12
 
 	data := map[string]interface{}{
 		"puma":         pumaItem,
@@ -29,59 +40,55 @@ func WebScraping(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(data)
 
 }
+*/
+func WebScraping(w http.ResponseWriter, r *http.Request) {
+	var wg sync.WaitGroup
+	resultChan := make(chan map[string]interface{}, 4)
 
-// func WebScraping(w http.ResponseWriter, r *http.Request) {
-// 	url, err := launcher.New().Headless(false).Launch()
-// 	if err != nil {
-// 		fmt.Println("Error al lanzar el navegador:", err)
-// 		return
-// 	}
+	// Lanzar las rutinas para cada función de scraping
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		mercadolibreItem := GetDataMercadolibre(w, r)
+		resultChan <- map[string]interface{}{"mercadoLibre": mercadolibreItem}
+	}()
 
-// 	browser := rod.New().ControlURL(url).MustConnect()
-// 	defer browser.Close()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		pumaItem := GetDataPuma(w, r)
+		resultChan <- map[string]interface{}{"puma": pumaItem}
+	}()
 
-// 	var wg sync.WaitGroup
-// 	resultChan := make(chan []Items, 3)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		nikeItem := GetDataNike(w, r)
+		resultChan <- map[string]interface{}{"nike": nikeItem}
+	}()
 
-// 	// Crear y lanzar goroutines para cada página en una pestaña diferente
-// 	wg.Add(1)
-// 	go func() {
-// 		defer wg.Done()
-// 		tab := browser.MustPage("") // Crear una nueva pestaña vacía
-// 		resultChan <- GetDataMercadolibre(w, r, tab)
-// 		tab.Close() // Cerrar la pestaña después del scraping
-// 	}()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		adidaItem := GetDataAdidas(w, r)
+		resultChan <- map[string]interface{}{"adidas": adidaItem}
+	}()
 
-// 	wg.Add(1)
-// 	go func() {
-// 		defer wg.Done()
-// 		tab := browser.MustPage("") // Crear una nueva pestaña vacía
-// 		resultChan <- GetDataPuma(w, r, tab)
-// 		tab.Close() // Cerrar la pestaña después del scraping
-// 	}()
+	// Cerrar el canal después de que todas las rutinas hayan terminado
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
 
-// 	wg.Add(1)
-// 	go func() {
-// 		defer wg.Done()
-// 		tab := browser.MustPage("") // Crear una nueva pestaña vacía
-// 		resultChan <- GetDataAdidas(w, r, tab)
-// 		tab.Close() // Cerrar la pestaña después del scraping
-// 	}()
+	// Recopilar los resultados de todas las rutinas
+	data := make(map[string]interface{})
+	for result := range resultChan {
+		for key, value := range result {
+			data[key] = value
+		}
+	}
 
-// 	// Cerrar el canal cuando todas las goroutines terminen
-// 	go func() {
-// 		wg.Wait()
-// 		close(resultChan)
-// 	}()
-
-// 	// Almacenar los resultados en un mapa
-// 	// data := make(map[string]ItemData)
-// 	// for result := range resultChan {
-// 	// 	data[result.Source] = result.Data
-// 	// }
-
-// 	fmt.Println("fin scraping")
-
-// 	w.Header().Set("Content-Type", "application/json")
-// 	json.NewEncoder(w).Encode(map[string]it)
-// }
+	fmt.Println("fin scrapin")
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(data)
+}

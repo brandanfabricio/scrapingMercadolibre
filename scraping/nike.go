@@ -2,6 +2,7 @@ package scraping
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -13,8 +14,18 @@ import (
 func GetDataNike(w http.ResponseWriter, r *http.Request) []Items {
 
 	proveedor := r.URL.Query().Get("proveedor")
+	search := r.URL.Query().Get("search")
 
-	urlSearch := fmt.Sprintf("https://www.nike.com.ar/%s?_q=%s&map=ft", proveedor, proveedor)
+	var urlSearch string
+
+	if proveedor == "" {
+
+		urlSearch = fmt.Sprintf("https://www.nike.com.ar/%s?_q=%s&map=ft", search, search)
+	} else {
+
+		urlSearch = fmt.Sprintf("https://www.nike.com.ar/%s?_q=%s&map=ft", proveedor, proveedor)
+
+	}
 
 	fmt.Println(urlSearch)
 
@@ -47,17 +58,32 @@ func GetDataNike(w http.ResponseWriter, r *http.Request) []Items {
 	page := incognitoContext.MustPage(urlSearch)
 
 	page.MustSetUserAgent(userAgent)
+	page.MustWaitLoad()
+	time.Sleep(5 * time.Second) // Esperar antes de intentar nuevamente
 
+	// Intentar encontrar el checkbox
+	checkbox, err := page.Elements(`div.cb-c`)
+	if err != nil {
+		// Si el checkbox existe, hacer clic
+		//
+		checkbox := checkbox.First().MustElement(`input[type="checkbox"]`)
+		checkbox.MustHover()
+
+		// Pausar un momento para simular el tiempo de reacción humano
+
+		// Simular presionar y soltar el botón del ratón
+		checkbox.MustFocus()
+		checkbox.Click(proto.InputMouseButtonRight, 1)
+	} else {
+		// Si el checkbox no existe, manejar el caso
+		log.Println("El checkbox no fue encontrado.")
+	}
 	// Ejecutar script para eliminar propiedades detectables
 
 	// userAgent := &proto.NetworkSetUserAgentOverride{
 	// 	UserAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
 	// }
 	// page.MustSetUserAgent(userAgent)
-
-	time.Sleep(10 * time.Second) // Esperar antes de intentar nuevamente
-
-	page.MustWaitLoad()
 
 	// aplicar filtros
 

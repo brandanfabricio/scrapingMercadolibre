@@ -12,15 +12,25 @@ import (
 func GetDataPuma(w http.ResponseWriter, r *http.Request) []Items {
 
 	proveedor := r.URL.Query().Get("proveedor")
-	color := r.URL.Query().Get("color")
+	search := r.URL.Query().Get("search")
 
-	color = color[1:]
+	var urlSearch string
+	if search != "" {
+		urlSearch = fmt.Sprintf("https://ar.puma.com/segmentifysearch?q=%s_*", proveedor)
 
-	urlSearch := fmt.Sprintf("https://ar.puma.com/segmentifysearch?q=%s_%s", proveedor, color)
+	} else {
+
+		urlSearch = fmt.Sprintf("https://ar.puma.com/segmentifysearch?q=%s_*", search)
+
+	}
+
+	// color := r.URL.Query().Get("color")
+
+	// color = color[1:]
 
 	fmt.Println(urlSearch)
 
-	url, err := launcher.New().Headless(false).Launch()
+	url, err := launcher.New().Headless(true).Launch()
 	if err != nil {
 		fmt.Println("Erorrrrrrrr")
 		fmt.Println(err)
