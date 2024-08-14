@@ -3,11 +3,106 @@ package scraping
 import (
 	"fmt"
 	"net/http"
-	"time"
+	"sync"
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
 )
+
+func GetDataPuma(w http.ResponseWriter, r *http.Request) []Items {
+
+	proveedor := r.URL.Query().Get("proveedor")
+	search := r.URL.Query().Get("search")
+
+	var urlSearch string
+	if proveedor != "" {
+		urlSearch = fmt.Sprintf("https://ar.puma.com/segmentifysearch?q=%s_*", proveedor)
+	} else {
+		urlSearch = fmt.Sprintf("https://ar.puma.com/segmentifysearch?q=%s_*", search)
+	}
+	// iniciar brouser
+	url, err := launcher.New().Headless(true).Launch()
+	if err != nil {
+		http.Error(w, "Error launching browser", http.StatusInternalServerError)
+		return nil
+	}
+	browser := rod.New().ControlURL(url).MustConnect()
+	defer browser.Close()
+	// navegando
+	fmt.Println("entrando en Puma ")
+	fmt.Println(urlSearch)
+	page := browser.MustPage(urlSearch)
+
+	page.MustWaitLoad()
+
+	// iniciando scraping
+	listItems := scrapingPuma(page)
+
+	fmt.Println("fin scraping puma")
+	return listItems
+
+}
+
+func scrapingPuma(page *rod.Page) []Items {
+	fmt.Println("iniciando scraping")
+	var listItems []Items
+	// rebisando si se obtuve contendoo buscado
+	containerPage, err := page.Elements(".ProductListPage")
+	if err != nil {
+		fmt.Println("contenido no encontrado")
+		return []Items{}
+	}
+	if len(containerPage) <= 0 {
+		fmt.Println("No hay datos")
+		return []Items{}
+	}
+	// obtenidndo las card
+	listProduct, err := containerPage.First().Elements("li.ProductCard")
+	if err != nil {
+		fmt.Println("No hay datos")
+		return []Items{}
+	}
+	for _, product := range listProduct {
+		item := Items{}
+		var wg sync.WaitGroup
+		// obtenedr descripcion
+		title := product.MustElement(".ProductCard-Name").MustText()
+		item.Title = title
+		//obtener precio
+		price := product.MustElement(".ProductPrice-CurrentPrice").MustText()
+		item.Precio = price
+		// obtener url para navegar
+		url := product.MustElement(".ProductCard-Link").MustAttribute("href")
+		item.Url = *url
+		// obtener imagenes
+		var listLinkImage []string
+		listImage := product.MustElements("img.Image-Image")
+
+		for _, image := range listImage {
+			wg.Add(1)
+			go func(image *rod.Element) {
+				defer wg.Done()
+				var link string
+				linkImage, err := image.Attribute("src")
+				if err != nil {
+					link = ""
+				}
+				link = *linkImage
+				listLinkImage = append(listLinkImage, link)
+			}(image)
+		}
+		wg.Wait()
+		item.Marca = "Puma"
+		item.Vendedor = "Puma"
+		item.Imagenes = listLinkImage
+		listItems = append(listItems, item)
+	}
+	return listItems
+}
+
+// func appliFilter() {}
+
+/*
 
 func GetDataPuma(w http.ResponseWriter, r *http.Request) []Items {
 
@@ -32,11 +127,9 @@ func GetDataPuma(w http.ResponseWriter, r *http.Request) []Items {
 
 	url, err := launcher.New().Headless(true).Launch()
 	if err != nil {
-		fmt.Println("Erorrrrrrrr")
-		fmt.Println(err)
-
+		http.Error(w, "Error launching browser", http.StatusInternalServerError)
+		return nil
 	}
-
 	browser := rod.New().ControlURL(url).MustConnect()
 	defer browser.Close()
 
@@ -124,3 +217,6 @@ func srapingPuma(page *rod.Page) []Items {
 }
 
 // func appliFilter() {}
+
+
+*/
