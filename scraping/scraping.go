@@ -12,12 +12,19 @@ func WebScraping(w http.ResponseWriter, r *http.Request) {
 
 	mercadolibreItem := GetDataMercadolibre(w, r)
 	// pumaItem := GetDataPuma(w, r)
+<<<<<<< HEAD
+	pumaItem := []Items{}
+	// adidaItem := GetDataAdidas(w, r)
+	adidaItem := []Items{}
+	// mercadolibreItem := []Items{}
+=======
 	// nikeItem := GetDataNike(w, r)
 	adidaItem := GetDataAdidas(w, r)
 	// // hola
 	pumaItem := []Items{}
 	// adidaItem := []Items{}
 	nikeItem := []Items{}
+>>>>>>> 35c02612185f503e82e5bbfadc5a806d09462b12
 
 	data := map[string]interface{}{
 		"puma":         pumaItem,
