@@ -42,14 +42,16 @@ func WebScraping(w http.ResponseWriter, r *http.Request) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		mercadolibreItem := GetDataMercadolibre(w, r)
+		// mercadolibreItem := GetDataMercadolibre(w, r)
+		mercadolibreItem := []Items{}
 		resultChan <- map[string]interface{}{"mercadoLibre": mercadolibreItem}
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		pumaItem := GetDataPuma(w, r)
+		// pumaItem := GetDataPuma(w, r)
+		pumaItem := []Items{}
 		resultChan <- map[string]interface{}{"puma": pumaItem}
 	}()
 
@@ -57,13 +59,15 @@ func WebScraping(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		defer wg.Done()
 		nikeItem := GetDataNike(w, r)
+		// nikeItem := []Items{}
 		resultChan <- map[string]interface{}{"nike": nikeItem}
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		adidaItem := GetDataAdidas(w, r)
+		// adidaItem := GetDataAdidas(w, r)
+		adidaItem := []Items{}
 		resultChan <- map[string]interface{}{"adidas": adidaItem}
 	}()
 
