@@ -51,16 +51,16 @@ func WebScraping(w http.ResponseWriter, r *http.Request) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		// pumaItem := GetDataPuma(w, r)
-		pumaItem := []Items{}
+		pumaItem := GetDataPuma(w, r)
+		// pumaItem := []Items{}
 		resultChan <- map[string]interface{}{"puma": pumaItem}
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		nikeItem := GetDataNike(w, r)
-		// nikeItem := []Items{}
+		// nikeItem := GetDataNike(w, r)
+		nikeItem := []Items{}
 		resultChan <- map[string]interface{}{"nike": nikeItem}
 	}()
 

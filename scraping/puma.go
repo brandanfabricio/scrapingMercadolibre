@@ -3,7 +3,7 @@ package scraping
 import (
 	"fmt"
 	"net/http"
-	"sync"
+	"time"
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
@@ -44,6 +44,8 @@ func GetDataPuma(w http.ResponseWriter, r *http.Request) []Items {
 }
 
 func scrapingPuma(page *rod.Page) []Items {
+	time.Sleep(1 * time.Second)
+	page.MustWaitLoad()
 	fmt.Println("iniciando scraping")
 	var listItems []Items
 	// rebisando si se obtuve contendoo buscado
@@ -64,13 +66,31 @@ func scrapingPuma(page *rod.Page) []Items {
 	}
 	for _, product := range listProduct {
 		item := Items{}
-		var wg sync.WaitGroup
 		// obtenedr descripcion
 		title := product.MustElement(".ProductCard-Name").MustText()
 		item.Title = title
 		//obtener precio
 		price := product.MustElement(".ProductPrice-CurrentPrice").MustText()
 		item.Precio = price
+		// ProductPrice-HighPrice
+
+		existOldPrice, err := product.Element(".ProductPrice-HighPrice")
+		var oldPrice string
+		if err == nil {
+			oldPrice = existOldPrice.MustText()
+		} else {
+			oldPrice = ""
+		}
+		item.PrecioAntiguo = oldPrice
+		var porcentage string
+		isPorcentage, err := product.Element(".ProductPrice-PercentageLabel")
+		if err == nil {
+			porcentage = isPorcentage.MustText()
+		} else {
+			porcentage = ""
+		}
+		item.Porcentaje = porcentage
+
 		// obtener url para navegar
 		url := product.MustElement(".ProductCard-Link").MustAttribute("href")
 		item.Url = *url
@@ -78,20 +98,15 @@ func scrapingPuma(page *rod.Page) []Items {
 		var listLinkImage []string
 		listImage := product.MustElements("img.Image-Image")
 
-		for _, image := range listImage {
-			wg.Add(1)
-			go func(image *rod.Element) {
-				defer wg.Done()
-				var link string
-				linkImage, err := image.Attribute("src")
-				if err != nil {
-					link = ""
-				}
-				link = *linkImage
-				listLinkImage = append(listLinkImage, link)
-			}(image)
+		var link string
+		linkImage, err := listImage.First().Attribute("src")
+
+		if err != nil {
+			link = ""
 		}
-		wg.Wait()
+		link = *linkImage
+		listLinkImage = append(listLinkImage, link)
+
 		item.Marca = "Puma"
 		item.Vendedor = "Puma"
 		item.Imagenes = listLinkImage
