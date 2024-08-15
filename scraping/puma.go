@@ -34,6 +34,7 @@ func GetDataPuma(w http.ResponseWriter, r *http.Request) []Items {
 	page := browser.MustPage(urlSearch)
 
 	page.MustWaitLoad()
+
 	time.Sleep(3 * time.Second)
 
 	// iniciando scraping
@@ -50,6 +51,7 @@ func scrapingPuma(page *rod.Page) []Items {
 	var listItems []Items
 	// rebisando si se obtuve contendoo buscado
 	// containerPage, err := page.Elements(".ProductListPage")
+
 	containerPage, err := page.Elements(".ProductListPage")
 
 	if err != nil {
@@ -116,3 +118,19 @@ func scrapingPuma(page *rod.Page) []Items {
 	}
 	return listItems
 }
+
+/**
+pr := page.MustEval(`() => document.querySelector('.ProductListPage') !== null`)
+
+	fmt.Println("######################")
+	fmt.Println(pr)
+	fmt.Println("######################")
+
+	.verificar si existe el elemento
+	.si no existe recien espereo
+	.luego voy a hacer la busqueda
+	.tratar de evitar el sleep
+
+
+
+*/
