@@ -21,7 +21,7 @@ func GetDataAdidas(w http.ResponseWriter, r *http.Request) []Items {
 	} else {
 		urlSearch = fmt.Sprintf("https://www.adidas.com.ar/search?q=%s", proveedor)
 	}
-	url, err := launcher.New().Headless(false).Launch()
+	url, err := launcher.New().Headless(true).Launch()
 	if err != nil {
 		http.Error(w, "Error launching browser", http.StatusInternalServerError)
 		return nil
@@ -74,7 +74,6 @@ func scrapingAdidas(page *rod.Page, proveedor string) []Items {
 }
 
 func scrapingList(page *rod.Page) []Items {
-	fmt.Println("Listado")
 	var listItems []Items
 	page.MustWaitLoad()
 
@@ -100,9 +99,7 @@ func scrapingList(page *rod.Page) []Items {
 			continue
 		}
 		var item Items
-		fmt.Println("aju")
 		urlLinks := elemts.MustElement(".glass-product-card__assets-link")
-		fmt.Println("ay")
 
 		links := urlLinks.MustAttribute("href")
 		// fmt.Println(*links)
@@ -142,7 +139,6 @@ func scrapingList(page *rod.Page) []Items {
 }
 
 func scrapingPage(page *rod.Page) []Items {
-	fmt.Println("Pagina")
 
 	page.MustWaitLoad()
 	var listItems []Items
@@ -211,7 +207,6 @@ func scrapingPage(page *rod.Page) []Items {
 				// 	fmt.Println("error de conversion")
 				// }
 				porcerntaje := int(((anti - nuevo) / anti) * 100)
-				fmt.Println(porcerntaje)
 				item.Porcentaje = fmt.Sprintf("%d%%", porcerntaje)
 
 			}

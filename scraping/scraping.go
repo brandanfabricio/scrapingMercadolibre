@@ -37,14 +37,14 @@ func WebScraping(w http.ResponseWriter, r *http.Request) {
 // hola, como estas ?
 func WebScraping(w http.ResponseWriter, r *http.Request) {
 
-	proveedor := r.URL.Query().Get("marca")
-	fmt.Println(proveedor)
-	switch proveedor {
-	case "PUMA":
-		fmt.Println("aki")
-	case "ADIDAS":
-		fmt.Println("aya")
-	}
+	// proveedor := r.URL.Query().Get("marca")
+	// fmt.Println(proveedor)
+	// switch proveedor {
+	// case "PUMA":
+	// 	fmt.Println("aki")
+	// case "ADIDAS":
+	// 	fmt.Println("aya")
+	// }
 
 	var wg sync.WaitGroup
 	resultChan := make(chan map[string]interface{}, 4)
@@ -61,8 +61,8 @@ func WebScraping(w http.ResponseWriter, r *http.Request) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		// pumaItem := GetDataPuma(w, r)
-		pumaItem := []Items{}
+		pumaItem := GetDataPuma(w, r)
+		// pumaItem := []Items{}
 		resultChan <- map[string]interface{}{"puma": pumaItem}
 	}()
 
