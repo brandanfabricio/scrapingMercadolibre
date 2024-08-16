@@ -140,78 +140,95 @@ func scraping(page *rod.Page, search string) []Items {
 		// fmt.Println(title)
 		// filtro de titulo
 
-		listSeach := strings.Split(search, " ")
-		listTiele := strings.Split(title, " ")
+		// listSeach := strings.Split(search, " ")
+		// listTiele := strings.Split(title, " ")
 
-		count := 0
-		for _, itemSearch := range listSeach {
+		// count := 0
+		// for _, itemSearch := range listSeach {
 
-			for _, lTitel := range listTiele {
+		// 	for _, lTitel := range listTiele {
 
-				if strings.Contains(strings.ToLower(itemSearch), strings.ToLower(lTitel)) {
+		// 		if strings.Contains(strings.ToLower(itemSearch), strings.ToLower(lTitel)) {
 
-					count++
-				}
+		// 			count++
+		// 		}
+		// 	}
+
+		// }
+
+		// fmt.Println("coun ", count)
+		// fmt.Println("coun2 ", len(listSeach))
+		item.Title = title
+		isSaller, err := elme.Element("div.poly-card__content > span.poly-component__seller")
+		if err != nil {
+			saller = ""
+		} else {
+			saller, err = isSaller.Text()
+			if err != nil {
+				saller = ""
 			}
 
 		}
 
-		// fmt.Println("coun ", count)
-		// fmt.Println("coun2 ", len(listSeach))
-		if count >= len(listSeach)/2 {
-			item.Title = title
-			isSaller, err := elme.Element("div.poly-card__content > span.poly-component__seller")
-			if err != nil {
-				saller = ""
-			} else {
-				saller, err = isSaller.Text()
-				if err != nil {
-					saller = ""
-				}
+		var linksImg []string
+		marca, err := elme.Element("span.poly-component__brand")
+		if err != nil {
+			item.Marca = ""
 
-			}
+		} else {
 
-			var linksImg []string
-			marca := elme.MustElement("span")
-			if marca.MustText() == "" {
-				marca = elme.MustElement("span.ui-search-item__brand-discoverability")
-			}
-
-			imgs := elme.MustElements("img")
-			for _, img := range imgs {
-				linkimg := img.MustAttribute("src")
-				links := *linkimg
-				link := strings.Split(links, ".")
-				if link[len(link)-1] == "webp" {
-
-					linksImg = append(linksImg, links)
-				}
-
-			}
-			// links
-			links := elme.MustElement("a")
-			link := links.MustAttribute("href")
-
-			// if strings.Contains(strings.ToUpper(title), "ZAPATILLA CARINA 2.0 LUX ADP") {
-			// 	item.Title = title
-			// 	fmt.Println("nop")
-			// 	// Aquí puedes hacer lo que necesites con el producto encontrado, como extraer más información
-			// } else {
-			// 	item.Title = ""
-
-			// }
-
-			price := elme.MustElement("span.andes-money-amount__fraction").MustText()
-			// item.Title = title
-			item.Precio = price
 			item.Marca = marca.MustText()
-			item.Imagenes = linksImg
-			item.Url = *link
-			item.Vendedor = saller
-			if item.Title != "" {
+		}
 
-				listItems = append(listItems, item)
+		imgs := elme.MustElements("img")
+		for _, img := range imgs {
+			linkimg := img.MustAttribute("src")
+			links := *linkimg
+			link := strings.Split(links, ".")
+			if link[len(link)-1] == "webp" {
+
+				linksImg = append(linksImg, links)
 			}
+
+		}
+		// links
+		links := elme.MustElement("a")
+		link := links.MustAttribute("href")
+
+		// if strings.Contains(strings.ToUpper(title), "ZAPATILLA CARINA 2.0 LUX ADP") {
+		// 	item.Title = title
+		// 	fmt.Println("nop")
+		// 	// Aquí puedes hacer lo que necesites con el producto encontrado, como extraer más información
+		// } else {
+		// 	item.Title = ""
+
+		// }
+
+		isCuttentPrice, err := elme.Element(".poly-price__current")
+
+		if err != nil {
+			price := elme.MustElement("span.andes-money-amount__fraction").MustText()
+
+			item.Precio = price
+
+		} else {
+			item.PrecioAntiguo = isCuttentPrice.MustElement("span.andes-money-amount__fraction").MustText()
+
+			item.Precio = elme.MustElement("span.andes-money-amount__fraction").MustText()
+
+			isExitProcentaje, err := isCuttentPrice.Element(".andes-money-amount__discount")
+			if err == nil {
+				item.Porcentaje = isExitProcentaje.MustText()
+			}
+
+		}
+
+		item.Imagenes = linksImg
+		item.Url = *link
+		item.Vendedor = saller
+		if item.Title != "" {
+
+			listItems = append(listItems, item)
 		}
 
 	}
@@ -245,16 +262,25 @@ func applyFilter(page *rod.Page, key, filter string) *rod.Page {
 			if len(item.MustElements("h3.ui-search-filter-dt-title")) > 0 {
 				filtro := item.MustElements("h3.ui-search-filter-dt-title")[0].MustText()
 				// fmt.Println(filtro)
-				// fmt.Println(filtro)
 				if filtro == key {
+
 					listLink := item.MustElements("a.ui-search-link")
 					time.Sleep(1 * time.Second)
-
 					for i, linkgenero := range listLink {
 						if i+1 >= len(listLink) {
-							if applyFilterWithModal(page, item, filter) {
-								return page
+							modalsLink, err := item.Element("a.ui-search-modal__link")
+							if err == nil {
+
+								if applyFilterWithModal(page, modalsLink, filter) {
+									return page
+								}
+
+							} else {
+								if applyFilterToElement(linkgenero, filter) {
+									return page
+								}
 							}
+
 						}
 						if i+1 < len(listLink) {
 							if applyFilterToElement(linkgenero, filter) {
@@ -283,20 +309,21 @@ func applyFilterToElement(linkgenero *rod.Element, filter string) bool {
 	}
 
 	if strings.Contains(targ, filter) || strings.Contains(targ+"s", filter) {
-		fmt.Println(" no modal -> tageta  " + targ + " filtro  " + filter)
 		linkgenero.MustClick().Page()
-		fmt.Println("click")
+		fmt.Println("Se aplico el filtro = ", filter)
 		return true
 	}
 	return false
 }
 
-func applyFilterWithModal(page *rod.Page, item *rod.Element, filter string) bool {
-	modalsLink, err := item.Element("a.ui-search-modal__link")
-	if err != nil {
-		fmt.Println("sin modal")
-		return false
-	}
+func applyFilterWithModal(page *rod.Page, modalsLink *rod.Element, filter string) bool {
+
+	// modalsLink, err := item.Element("a.ui-search-modal__link")
+	// if err != nil {
+
+	// 	fmt.Println("sin modal")
+
+	// }
 	modalsLink.MustClick()
 	time.Sleep(1 * time.Second)
 	fmt.Println("abriendo modal")
@@ -312,9 +339,9 @@ func applyFilterWithModal(page *rod.Page, item *rod.Element, filter string) bool
 				filter = "mujer"
 			}
 			if strings.Contains(targName, filter) || strings.Contains(targName+"s", filter) {
-				fmt.Println("tageta  " + targName)
 				linkgenero.MustClick().Page()
-				fmt.Println("click")
+				fmt.Println("Se aplico el filtro = ", filter)
+
 				return true
 			} else {
 				if i+1 == len(modalItem) {

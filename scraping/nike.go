@@ -2,8 +2,8 @@ package scraping
 
 import (
 	"fmt"
-	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
@@ -23,7 +23,7 @@ func GetDataNike(w http.ResponseWriter, r *http.Request) []Items {
 		urlSearch = fmt.Sprintf("https://www.nike.com.ar/%s?_q=%s&map=ft", proveedor, proveedor)
 	}
 	url, err := launcher.New().
-		Headless(false). // Ejecutar en modo no-headless para ser menos detectable
+		Headless(true).  // Ejecutar en modo no-headless para ser menos detectable
 		NoSandbox(true). // Omitir la caja de arena para evitar detección
 		Leakless(false). // Desactivar los argumentos que revelan el modo headless
 		Devtools(true).  // Permitir herramientas de desarrollador para parecer más real
@@ -46,7 +46,7 @@ func GetDataNike(w http.ResponseWriter, r *http.Request) []Items {
 
 	page.MustSetUserAgent(userAgent)
 	page.MustWaitLoad()
-	// time.Sleep(5 * time.Second) // Esperar antes de intentar nuevamente
+	time.Sleep(3 * time.Second) // Esperar antes de intentar nuevamente
 	checkbox, err := page.Elements(`div.cb-c`)
 	// Intentar encontrar el checkbox
 	if err != nil {
@@ -54,8 +54,6 @@ func GetDataNike(w http.ResponseWriter, r *http.Request) []Items {
 		checkbox.MustHover()
 		checkbox.MustFocus()
 		checkbox.Click(proto.InputMouseButtonRight, 1)
-	} else {
-		log.Println("El checkbox no fue encontrado.")
 	}
 	page.MustWaitLoad()
 
@@ -87,8 +85,20 @@ func scrapingNike(page *rod.Page) []Items {
 		item := Items{}
 		title := product.MustElement(".vtex-product-summary-2-x-nameContainer").MustText()
 		item.Title = title
+
 		price := product.MustElement(".vtex-product-price-1-x-sellingPrice").MustText()
 		item.Precio = price
+		isOldPrice, err := product.Element(".vtex-product-price-1-x-listPrice")
+		if err == nil {
+			item.PrecioAntiguo = isOldPrice.MustText()
+		}
+		isPorcentaje, err := product.Element(".vtex-product-price-1-x-savingsPercentage")
+
+		if err == nil {
+
+			item.Porcentaje = isPorcentaje.MustText()
+		}
+
 		item.Marca = "Nike"
 		item.Vendedor = "Nike"
 
