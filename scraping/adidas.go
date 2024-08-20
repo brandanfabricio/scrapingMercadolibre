@@ -67,7 +67,7 @@ func scrapingAdidas(page *rod.Page, proveedor string) []Items {
 		listItems = scrapingList(page)
 
 	} else {
-		listItems = scrapingPage(page)
+		listItems = scrapingPage(page, proveedor)
 	}
 	return listItems
 
@@ -138,7 +138,7 @@ func scrapingList(page *rod.Page) []Items {
 
 }
 
-func scrapingPage(page *rod.Page) []Items {
+func scrapingPage(page *rod.Page, proveedor string) []Items {
 
 	page.MustWaitLoad()
 	var listItems []Items
@@ -197,15 +197,6 @@ func scrapingPage(page *rod.Page) []Items {
 					fmt.Println("err")
 				}
 
-				// num1, err := strconv.ParseInt(item.Precio, 10, 64)
-				// if err != nil {
-				// 	fmt.Println("error de conversion")
-				// }
-				// num2, err := strconv.ParseInt(item.PrecioAntiguo, 10, 64)
-
-				// if err != nil {
-				// 	fmt.Println("error de conversion")
-				// }
 				porcerntaje := int(((anti - nuevo) / anti) * 100)
 				item.Porcentaje = fmt.Sprintf("%d%%", porcerntaje)
 
@@ -215,6 +206,7 @@ func scrapingPage(page *rod.Page) []Items {
 		// gl-price-item--sale
 
 		//
+		item.CodProveedor = proveedor
 
 		item.Url = page.MustInfo().URL
 		item.Marca = "Adidas"

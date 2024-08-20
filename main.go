@@ -11,6 +11,7 @@ func main() {
 	// http.HandleFunc("GET /api/puma", scraping.GetDataPuma)
 	// http.HandleFunc("GET /api/adidas", scraping.GetDataAdidas)
 	http.HandleFunc("GET /api/scraping", scraping.WebScraping)
+	http.HandleFunc("GET /api/scrapingMercadoLibre", scraping.WebScrapingMercadoLibre)
 
 	http.ListenAndServe(":3000", AddCORSHeaders(http.DefaultServeMux))
 

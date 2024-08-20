@@ -3,6 +3,7 @@ package scraping
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/go-rod/rod"
@@ -38,14 +39,14 @@ func GetDataPuma(w http.ResponseWriter, r *http.Request) []Items {
 	time.Sleep(3 * time.Second)
 
 	// iniciando scraping
-	listItems := scrapingPuma(page)
+	listItems := scrapingPuma(page, proveedor)
 
 	fmt.Println("fin scraping puma")
 	return listItems
 
 }
 
-func scrapingPuma(page *rod.Page) []Items {
+func scrapingPuma(page *rod.Page, proveedor string) []Items {
 	page.MustWaitLoad()
 	fmt.Println("iniciando scraping")
 	var listItems []Items
@@ -98,6 +99,20 @@ func scrapingPuma(page *rod.Page) []Items {
 		// obtener url para navegar
 		url := product.MustElement(".ProductCard-Link").MustAttribute("href")
 		item.Url = *url
+
+		re := regexp.MustCompile(fmt.Sprintf(`%s-(\d+)`, proveedor))
+		match := re.FindStringSubmatch(*url)
+
+		if len(match) > 1 {
+			codigoFinal := match[0] // 107993-01
+
+			if codigoFinal != "" {
+
+				item.CodProveedor = codigoFinal
+			}
+
+		}
+
 		// obtener imagenes
 		var listLinkImage []string
 		listImage := product.MustElements("img.Image-Image")

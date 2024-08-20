@@ -8,5 +8,6 @@ type Items struct {
 	Vendedor      string
 	PrecioAntiguo string
 	Porcentaje    string
+	CodProveedor  string
 	Imagenes      []string
 }

@@ -3,6 +3,7 @@ package scraping
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/go-rod/rod"
@@ -57,12 +58,12 @@ func GetDataNike(w http.ResponseWriter, r *http.Request) []Items {
 	}
 	page.MustWaitLoad()
 
-	listItems := scrapingNike(page)
+	listItems := scrapingNike(page, proveedor)
 	fmt.Println("fin nike")
 	return listItems
 }
 
-func scrapingNike(page *rod.Page) []Items {
+func scrapingNike(page *rod.Page, proveedor string) []Items {
 	page.MustWaitLoad()
 	fmt.Println("iniciando scraping")
 	page.MustWaitLoad()
@@ -107,6 +108,14 @@ func scrapingNike(page *rod.Page) []Items {
 		url := product.MustElement("a.vtex-product-summary-2-x-clearLink").MustAttribute("href")
 		locateUrl := fmt.Sprintf("https://www.nike.com.ar/%s", *url)
 		item.Url = locateUrl
+
+		item.CodProveedor = proveedor
+		re := regexp.MustCompile(`\b\w{6}-\w{3}\b`)
+		match := re.FindString(locateUrl)
+
+		if match != "" {
+			item.CodProveedor = match
+		}
 
 		listImage := product.MustElements("img.vtex-product-summary-2-x-imageNormal")
 
