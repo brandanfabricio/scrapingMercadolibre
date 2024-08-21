@@ -18,8 +18,8 @@ func WebScrapingMercadoLibre(w http.ResponseWriter, r *http.Request) {
 		mercadolibreItem = GetDataMercadolibrePuma(w, r)
 	case "ADIDAS":
 		mercadolibreItem = GetDataMercadolibreAdidas(w, r)
-	case "NIKE":
-		mercadolibreItem = GetDataMercadolibreNike(w, r)
+	// case "NIKE":
+	// 	mercadolibreItem = GetDataMercadolibreNike(w, r)
 	default:
 		mercadolibreItem = GetDataMercadolibre(w, r)
 
