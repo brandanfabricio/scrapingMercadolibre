@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"webScraping/scraping"
 )
@@ -12,7 +13,7 @@ func main() {
 	// http.HandleFunc("GET /api/adidas", scraping.GetDataAdidas)
 	http.HandleFunc("GET /api/scraping", scraping.WebScraping)
 	http.HandleFunc("GET /api/scrapingMercadoLibre", scraping.WebScrapingMercadoLibre)
-
+	fmt.Println("Servidor corriendo en el puerto 3000")
 	http.ListenAndServe(":3000", AddCORSHeaders(http.DefaultServeMux))
 
 }

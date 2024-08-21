@@ -12,6 +12,84 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
+func GetDataMercadolibreNike(w http.ResponseWriter, r *http.Request) []Items {
+	proveedor := r.URL.Query().Get("proveedor")
+	search := proveedor
+	url, err := launcher.New().
+		Headless(true).
+		NoSandbox(true).
+		Launch()
+	if err != nil {
+		http.Error(w, "Error launching browser", http.StatusInternalServerError)
+		return nil
+	}
+	browser := rod.New().ControlURL(url).
+		MustConnect().
+		MustIgnoreCertErrors(false)
+	defer browser.Close()
+	fmt.Println("entrando en mercado libre ")
+	page := browser.MustPage("https://www.mercadolibre.com.ar/")
+	// Llenar el formulario y hacer clic en el botón de búsqueda
+	page.MustElement("#cb1-edit").MustInput(search)
+	page.MustElement(".nav-search-btn").MustClick()
+	listItems := scraping(page, proveedor)
+	fmt.Println("Fin scraping Mercado Libre ")
+	return listItems
+
+}
+
+func GetDataMercadolibreAdidas(w http.ResponseWriter, r *http.Request) []Items {
+	proveedor := r.URL.Query().Get("proveedor")
+	search := proveedor
+	url, err := launcher.New().
+		Headless(true).
+		NoSandbox(true).
+		Launch()
+	if err != nil {
+		http.Error(w, "Error launching browser", http.StatusInternalServerError)
+		return nil
+	}
+	browser := rod.New().ControlURL(url).
+		MustConnect().
+		MustIgnoreCertErrors(false)
+	defer browser.Close()
+	fmt.Println("entrando en mercado libre ")
+	page := browser.MustPage("https://www.mercadolibre.com.ar/")
+	// Llenar el formulario y hacer clic en el botón de búsqueda
+	page.MustElement("#cb1-edit").MustInput(search)
+	page.MustElement(".nav-search-btn").MustClick()
+	listItems := scraping(page, proveedor)
+	fmt.Println("Fin scraping Mercado Libre ")
+	return listItems
+
+}
+
+func GetDataMercadolibrePuma(w http.ResponseWriter, r *http.Request) []Items {
+	proveedor := r.URL.Query().Get("proveedor")
+	search := proveedor
+	url, err := launcher.New().
+		Headless(true).
+		NoSandbox(true).
+		Launch()
+	if err != nil {
+		http.Error(w, "Error launching browser", http.StatusInternalServerError)
+		return nil
+	}
+	browser := rod.New().ControlURL(url).
+		MustConnect().
+		MustIgnoreCertErrors(false)
+	defer browser.Close()
+	fmt.Println("entrando en mercado libre ")
+	page := browser.MustPage("https://www.mercadolibre.com.ar/")
+	// Llenar el formulario y hacer clic en el botón de búsqueda
+	page.MustElement("#cb1-edit").MustInput(search)
+	page.MustElement(".nav-search-btn").MustClick()
+	listItems := scraping(page, proveedor)
+	fmt.Println("Fin scraping Mercado Libre ")
+	return listItems
+
+}
+
 func GetDataMercadolibre(w http.ResponseWriter, r *http.Request) []Items {
 
 	coditm := r.URL.Query().Get("search")
@@ -79,32 +157,8 @@ func GetDataMercadolibre(w http.ResponseWriter, r *http.Request) []Items {
 	fils := []string{"Marca:" + marca, "Género:" + genero, "Categorías:" + categoria, "Talle:" + talle, "Material principal:" + material, "Condición:Nuevo", "Tiendas oficiales:Solo tiendas oficiales"}
 
 	getMarc(page, fils)
-	fmt.Println("Iniciado scraping")
-	listItems = scraping(page, coditm)
+	listItems = scraping(page, "")
 
-	/*
-
-		db, err := sql.Open("sqlite3", "scraping.db")
-		if err != nil {
-			log.Fatal("err")
-			log.Fatal(err)
-		}
-		defer db.Close()d
-
-		for _, item := range listItems {
-			res, err := db.Exec("insert into WebItems(Title,Precio) values(?,?)", item.Title, item.Precio)
-
-			if err != nil {
-				log.Fatal(err)
-			}
-			id, err := res.LastInsertId()
-			if err != nil {
-				log.Fatal(err)
-			}
-			fmt.Println(id)
-
-		}
-	*/
 	// // Guardar los datos en un archivo JSON
 	fmt.Println("fin")
 	return listItems
@@ -115,7 +169,8 @@ func GetDataMercadolibre(w http.ResponseWriter, r *http.Request) []Items {
 
 }
 
-func scraping(page *rod.Page, search string) []Items {
+func scraping(page *rod.Page, proveedor string) []Items {
+	fmt.Println("Iniciado scraping")
 	page.MustWaitLoad()
 	listItems := []Items{}
 
@@ -226,6 +281,11 @@ func scraping(page *rod.Page, search string) []Items {
 		item.Imagenes = linksImg
 		item.Url = *link
 		item.Vendedor = saller
+
+		if proveedor != "" {
+			item.CodProveedor = proveedor
+		}
+
 		if item.Title != "" {
 
 			listItems = append(listItems, item)

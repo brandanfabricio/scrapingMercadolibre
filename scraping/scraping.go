@@ -9,7 +9,21 @@ import (
 
 func WebScrapingMercadoLibre(w http.ResponseWriter, r *http.Request) {
 
-	mercadolibreItem := GetDataMercadolibre(w, r)
+	var mercadolibreItem []Items
+
+	proveedor := r.URL.Query().Get("marca")
+
+	switch proveedor {
+	case "PUMA":
+		mercadolibreItem = GetDataMercadolibrePuma(w, r)
+	case "ADIDAS":
+		mercadolibreItem = GetDataMercadolibreAdidas(w, r)
+	case "NIKE":
+		mercadolibreItem = GetDataMercadolibreNike(w, r)
+	default:
+		mercadolibreItem = GetDataMercadolibre(w, r)
+
+	}
 
 	data := map[string]interface{}{
 		"mercadoLibre": mercadolibreItem,
