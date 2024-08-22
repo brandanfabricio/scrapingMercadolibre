@@ -24,10 +24,10 @@ func GetDataNike(w http.ResponseWriter, r *http.Request) []Items {
 		urlSearch = fmt.Sprintf("https://www.nike.com.ar/%s?_q=%s&map=ft", proveedor, proveedor)
 	}
 	url, err := launcher.New().
-		Headless(true).  // Ejecutar en modo no-headless para ser menos detectable
-		NoSandbox(true). // Omitir la caja de arena para evitar detección
-		Leakless(false). // Desactivar los argumentos que revelan el modo headless
-		Devtools(true).  // Permitir herramientas de desarrollador para parecer más real
+		Headless(false). // Ejecutar en modo no-headless para ser menos detectable
+		// NoSandbox(true). // Omitir la caja de arena para evitar detección
+		// Leakless(false). // Desactivar los argumentos que revelan el modo headless
+		Devtools(true). // Permitir herramientas de desarrollador para parecer más real
 		Launch()
 	if err != nil {
 		http.Error(w, "Error launching browser", http.StatusInternalServerError)
@@ -47,16 +47,60 @@ func GetDataNike(w http.ResponseWriter, r *http.Request) []Items {
 
 	page.MustSetUserAgent(userAgent)
 	page.MustWaitLoad()
-	time.Sleep(3 * time.Second) // Esperar antes de intentar nuevamente
-	checkbox, err := page.Elements(`div.cb-c`)
-	// Intentar encontrar el checkbox
-	if err != nil {
-		checkbox := checkbox.First().MustElement(`input[type="checkbox"]`)
-		checkbox.MustHover()
-		checkbox.MustFocus()
-		checkbox.Click(proto.InputMouseButtonRight, 1)
+
+	// checkbox, err := page.Element(`.no-js`)
+	// Verificar si se ha encontrado un CAPTCHA
+
+	for i := 0; i < 5; i++ {
+		checkbox, err := page.Elements(`.no-js`)
+		if err == nil {
+			if len(checkbox) > 0 {
+
+				time.Sleep(5 * time.Second)
+				fmt.Println("CAPTCHA encontrado, cerrando página y reintentando...")
+
+				// Cerrar la página y reabrir una nueva instancia
+				page.Close()
+				page = incognitoContext.MustPage(urlSearch)
+				page.MustSetUserAgent(userAgent)
+				page.MustWaitLoad()
+			} else {
+				break
+			}
+		} else {
+			break
+		}
+
 	}
-	page.MustWaitLoad()
+
+	// time.Sleep(10 * time.Second)
+	// fmt.Println(checkbox)
+	// Intentar encontrar el checkbox
+
+	// if err == nil {
+
+	// 	ckeck, err := checkbox.Element("#RlquG0")
+	// 	fmt.Println("akii")
+	// 	fmt.Println(ckeck)
+	// 	if err == nil {
+
+	// 		ckeck2 := ckeck.MustElement(`input`)
+	// 		fmt.Println(ckeck2)
+	// 		ckeck2.MustHover()
+	// 		ckeck2.MustFocus()
+	// 		ckeck2.Click(proto.InputMouseButtonRight, 1)
+	// 		page.MustWaitLoad()
+	// 	}
+
+	// 	// content
+	// 	// fmt.Println("ckeck book")
+	// 	// checkbox := checkbox.MustElement(`input[type="checkbox"]`)
+	// 	// checkbox.MustHover()
+	// 	// checkbox.MustFocus()
+	// 	// checkbox.Click(proto.InputMouseButtonRight, 1)
+	// }
+
+	// time.Sleep(20 * time.Second) // Esperar antes de intentar nuevamente
 
 	listItems := scrapingNike(page, proveedor)
 	fmt.Println("fin nike")
