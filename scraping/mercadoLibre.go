@@ -91,27 +91,21 @@ func GetDataMercadolibrePuma(w http.ResponseWriter, r *http.Request) []Items {
 }
 
 func GetDataMercadolibre(w http.ResponseWriter, r *http.Request) []Items {
-
 	coditm := r.URL.Query().Get("search")
 	marca := r.URL.Query().Get("marca")
 	categoria := r.URL.Query().Get("categoria")
 	genero := r.URL.Query().Get("genero")
 	talle := r.URL.Query().Get("Talle")
 	material := r.URL.Query().Get("material")
-
-	search := fmt.Sprintf("%s %s %s %s", categoria, coditm, marca, genero)
-
+	search := fmt.Sprintf("%s ", coditm)
 	if material == "SINTETICO" {
 		material = "Sintético"
 	}
 	if marca == "DISTRINANDO (CHOCOLATE)" {
 		material = "CHOCOLATE"
 	}
-
 	fmt.Println(search)
-
 	// page := rod.New().MustConnect().MustPage("https://listado.mercadolibre.com.ar/mochilas-hombre#D[A:mochilas%20hombre%20]")
-
 	// Launch a headless browser
 	url, err := launcher.New().
 		Headless(true).
@@ -120,99 +114,51 @@ func GetDataMercadolibre(w http.ResponseWriter, r *http.Request) []Items {
 	if err != nil {
 		fmt.Println("Erorrrrrrrr")
 		fmt.Println(err)
-
 	}
-
 	browser := rod.New().ControlURL(url).
 		MustConnect().
 		MustIgnoreCertErrors(false)
-	// 	.
-	// 	DefaultDevice(proto.EmulationSetUserAgentOverride{
-	// 		UserAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
-	// 	})
-
-	// // Desactivar la carga de imágenes
-	// browser.MustSetExtraHTTPHeaders(proto.NetworkSetExtraHTTPHeaders{
-	// 	Headers: map[string]string{
-	// 		"Sec-Fetch-Dest": "document",
-	// 		"Sec-Fetch-Mode": "navigate",
-	// 		"Sec-Fetch-Site": "same-origin",
-	// 		"Accept":         "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-	// 	},
-	// })
 	defer browser.Close()
-
 	fmt.Println("entrando en mercado libre ")
 	page := browser.MustPage("https://www.mercadolibre.com.ar/")
-
 	// Llenar el formulario y hacer clic en el botón de búsqueda
 	page.MustElement("#cb1-edit").MustInput(search)
 	page.MustElement(".nav-search-btn").MustClick()
-
 	// class="ui-search-layout__item"
 	// ui-search-filter-groups
-
 	var listItems []Items
-
 	fils := []string{"Marca:" + marca, "Género:" + genero, "Categorías:" + categoria, "Talle:" + talle, "Material principal:" + material, "Condición:Nuevo", "Tiendas oficiales:Solo tiendas oficiales"}
-
 	getMarc(page, fils)
 	listItems = scraping(page, "")
-
 	// // Guardar los datos en un archivo JSON
 	fmt.Println("fin")
 	return listItems
-	// w.Header().Set("Content-Type", "application/json")
-
-	// fmt.Fprintf(w, "Buscando %s", &jsonData)
-	// json.NewEncoder(w).Encode(listItems)
-
 }
 
 func scraping(page *rod.Page, proveedor string) []Items {
 	fmt.Println("Iniciado scraping")
 	page.MustWaitLoad()
 	listItems := []Items{}
-
-	containe := page.MustElement(".ui-search-layout")
-	element := containe.MustElements(".ui-search-layout__item")
-
+	containe, err := page.Elements(".ui-search-layout")
+	if err != nil {
+		fmt.Println("contenido no encontrado")
+		return []Items{}
+	}
+	if len(containe) <= 0 {
+		fmt.Println("contenido no encontrado")
+		return []Items{}
+	}
+	element := containe.First().MustElements(".ui-search-layout__item")
 	for _, elme := range element {
 		elme.WaitVisible()
-
 		defer func() {
 			if r := recover(); r != nil {
 				fmt.Println("Recover en scraping")
 			}
 		}()
-
 		item := Items{}
-
 		var saller string
-
 		title := elme.MustElement("h2").MustText()
-
-		// fmt.Println(title)
-		// filtro de titulo
-
-		// listSeach := strings.Split(search, " ")
-		// listTiele := strings.Split(title, " ")
-
-		// count := 0
-		// for _, itemSearch := range listSeach {
-
-		// 	for _, lTitel := range listTiele {
-
-		// 		if strings.Contains(strings.ToLower(itemSearch), strings.ToLower(lTitel)) {
-
-		// 			count++
-		// 		}
-		// 	}
-
-		// }
-
-		// fmt.Println("coun ", count)
-		// fmt.Println("coun2 ", len(listSeach))
 		item.Title = title
 		isSaller, err := elme.Element("div.poly-card__content > span.poly-component__seller")
 		if err != nil {
@@ -222,75 +168,47 @@ func scraping(page *rod.Page, proveedor string) []Items {
 			if err != nil {
 				saller = ""
 			}
-
 		}
-
 		var linksImg []string
 		marca, err := elme.Element("span.poly-component__brand")
 		if err != nil {
 			item.Marca = ""
-
 		} else {
-
 			item.Marca = marca.MustText()
 		}
-
 		imgs := elme.MustElements("img")
 		for _, img := range imgs {
 			linkimg := img.MustAttribute("src")
 			links := *linkimg
 			link := strings.Split(links, ".")
 			if link[len(link)-1] == "webp" {
-
 				linksImg = append(linksImg, links)
 			}
-
 		}
 		// links
 		links := elme.MustElement("a")
 		link := links.MustAttribute("href")
-
-		// if strings.Contains(strings.ToUpper(title), "ZAPATILLA CARINA 2.0 LUX ADP") {
-		// 	item.Title = title
-		// 	fmt.Println("nop")
-		// 	// Aquí puedes hacer lo que necesites con el producto encontrado, como extraer más información
-		// } else {
-		// 	item.Title = ""
-
-		// }
-
 		isCuttentPrice, err := elme.Element(".poly-price__current")
-
 		if err != nil {
 			price := elme.MustElement("span.andes-money-amount__fraction").MustText()
-
 			item.Precio = price
-
 		} else {
 			item.PrecioAntiguo = isCuttentPrice.MustElement("span.andes-money-amount__fraction").MustText()
-
 			item.Precio = elme.MustElement("span.andes-money-amount__fraction").MustText()
-
 			isExitProcentaje, err := isCuttentPrice.Element(".andes-money-amount__discount")
 			if err == nil {
 				item.Porcentaje = isExitProcentaje.MustText()
 			}
-
 		}
-
 		item.Imagenes = linksImg
 		item.Url = *link
 		item.Vendedor = saller
-
 		if proveedor != "" {
 			item.CodProveedor = proveedor
 		}
-
 		if item.Title != "" {
-
 			listItems = append(listItems, item)
 		}
-
 	}
 	return listItems
 }
@@ -303,7 +221,6 @@ func getMarc(page *rod.Page, fils []string) {
 			page = applyFilter(page, key, search)
 		}
 	}
-
 }
 
 func applyFilter(page *rod.Page, key, filter string) *rod.Page {
@@ -312,62 +229,56 @@ func applyFilter(page *rod.Page, key, filter string) *rod.Page {
 			fmt.Println("Recovered en applyFilter: ", r)
 		}
 	}()
-
 	for i := 0; i < 1; i++ { // Intentar aplicar el filtro hasta 3 veces
 		page.MustWaitLoad()
-		containerFilters := page.MustElement(".ui-search-filter-groups")
-		filters := containerFilters.MustElements(".ui-search-filter-dl")
-
+		containerFilters, err := page.Elements(".ui-search-filter-groups")
+		if err != nil {
+			return page
+		}
+		if len(containerFilters) <= 0 {
+			return page
+		}
+		filters := containerFilters.First().MustElements(".ui-search-filter-dl")
 		for _, item := range filters {
 			if len(item.MustElements("h3.ui-search-filter-dt-title")) > 0 {
 				filtro := item.MustElements("h3.ui-search-filter-dt-title")[0].MustText()
 				// fmt.Println(filtro)
 				if filtro == key {
-
 					listLink := item.MustElements("a.ui-search-link")
 					time.Sleep(1 * time.Second)
 					for i, linkgenero := range listLink {
 						if i+1 >= len(listLink) {
 							modalsLink, err := item.Element("a.ui-search-modal__link")
 							if err == nil {
-
 								if applyFilterWithModal(page, modalsLink, filter) {
 									return page
 								}
-
 							} else {
 								if applyFilterToElement(linkgenero, filter) {
 									return page
 								}
 							}
-
 						}
 						if i+1 < len(listLink) {
 							if applyFilterToElement(linkgenero, filter) {
 								return page
 							}
 						}
-
 					}
 				}
 			}
 		}
 	}
-
 	fmt.Printf("No se pudo aplicar el filtro: %s = %s\n", key, filter)
 	return page
 }
 
 func applyFilterToElement(linkgenero *rod.Element, filter string) bool {
-
 	targ := normalizeFilter(linkgenero.MustElement("span.ui-search-filter-name").MustText())
-
 	filter = normalizeFilter(filter)
-
 	if filter == "damas" {
 		filter = "mujer"
 	}
-
 	if strings.Contains(targ, filter) || strings.Contains(targ+"s", filter) {
 		linkgenero.MustClick().Page()
 		fmt.Println("Se aplico el filtro = ", filter)
@@ -377,13 +288,6 @@ func applyFilterToElement(linkgenero *rod.Element, filter string) bool {
 }
 
 func applyFilterWithModal(page *rod.Page, modalsLink *rod.Element, filter string) bool {
-
-	// modalsLink, err := item.Element("a.ui-search-modal__link")
-	// if err != nil {
-
-	// 	fmt.Println("sin modal")
-
-	// }
 	modalsLink.MustClick()
 	time.Sleep(1 * time.Second)
 	fmt.Println("abriendo modal")

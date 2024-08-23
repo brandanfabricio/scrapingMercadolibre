@@ -67,6 +67,9 @@ func GetDataNike(w http.ResponseWriter, r *http.Request) []Items {
 		}
 	}
 	listItems := scrapingNike(page, proveedor)
+	if len(listItems) <= 0 {
+		listItems = scrapingNike(page, proveedor)
+	}
 	fmt.Println("fin nike")
 	return listItems
 }

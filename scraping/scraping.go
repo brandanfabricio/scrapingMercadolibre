@@ -81,9 +81,6 @@ func WebScraping(w http.ResponseWriter, r *http.Request) {
 			nikeItem := GetDataNike(w, r)
 			resultChan <- map[string]interface{}{"nike": nikeItem}
 		}()
-	default:
-		// En caso de que no se proporcione un proveedor válido o reconocido
-		fmt.Println("Proveedor no reconocido, no se ejecutará scraping adicional.")
 	}
 
 	// Cerrar el canal después de que todas las rutinas hayan terminado
