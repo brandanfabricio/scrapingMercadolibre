@@ -30,6 +30,7 @@ func GetDataMercadolibreNike(w http.ResponseWriter, r *http.Request) []Items {
 	fmt.Println("entrando en mercado libre ")
 	page := browser.MustPage("https://www.mercadolibre.com.ar/")
 	// Llenar el formulario y hacer clic en el botón de búsqueda
+	LoggerInfo("Bucando " + search)
 	page.MustElement("#cb1-edit").MustInput(search)
 	page.MustElement(".nav-search-btn").MustClick()
 	listItems := scraping(page, proveedor)

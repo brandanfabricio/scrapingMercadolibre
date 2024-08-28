@@ -30,7 +30,7 @@ func GetDataAdidas(w http.ResponseWriter, r *http.Request) []Items {
 	defer browser.Close()
 	fmt.Println("entrando en Adidas ")
 	fmt.Println(urlSearch)
-
+	LoggerInfo(urlSearch)
 	page := browser.MustPage(urlSearch)
 	page.MustWaitLoad()
 	time.Sleep(1 * time.Second)

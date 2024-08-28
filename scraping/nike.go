@@ -39,6 +39,7 @@ func GetDataNike(w http.ResponseWriter, r *http.Request) []Items {
 	defer incognitoContext.Close()
 	fmt.Println("entrando en nike ")
 	fmt.Println(urlSearch)
+	LoggerInfo(urlSearch)
 	userAgent := &proto.NetworkSetUserAgentOverride{
 		UserAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
 	}
@@ -54,6 +55,7 @@ func GetDataNike(w http.ResponseWriter, r *http.Request) []Items {
 			if len(checkbox) > 0 {
 				time.Sleep(6 * time.Second)
 				fmt.Println("CAPTCHA encontrado, cerrando página y reintentando...")
+				LoggerWarning("CAPTCHA encontrado, cerrando página y reintentando...")
 				// Cerrar la página y reabrir una nueva instancia
 				page.Close()
 				page = incognitoContext.MustPage(urlSearch)
@@ -68,6 +70,11 @@ func GetDataNike(w http.ResponseWriter, r *http.Request) []Items {
 	}
 	listItems := scrapingNike(page, proveedor)
 	if len(listItems) <= 0 {
+		LoggerInfo("Utimo intento")
+		page.Close()
+		page = incognitoContext.MustPage(urlSearch)
+		page.MustSetUserAgent(userAgent)
+		page.MustWaitLoad()
 		listItems = scrapingNike(page, proveedor)
 	}
 	fmt.Println("fin nike")

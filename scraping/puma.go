@@ -32,6 +32,7 @@ func GetDataPuma(w http.ResponseWriter, r *http.Request) []Items {
 	// navegando
 	fmt.Println("entrando en Puma ")
 	fmt.Println(urlSearch)
+	LoggerInfo(urlSearch)
 	page := browser.MustPage(urlSearch)
 
 	page.MustWaitLoad()
