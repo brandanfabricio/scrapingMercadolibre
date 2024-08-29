@@ -34,6 +34,10 @@ func GetDataMercadolibreNike(w http.ResponseWriter, r *http.Request) []Items {
 	page.MustElement("#cb1-edit").MustInput(search)
 	page.MustElement(".nav-search-btn").MustClick()
 	listItems := scraping(page, proveedor)
+	if len(listItems) <= 0 {
+		LoggerInfo(fmt.Sprintf("No se encontro producto de nike por codigo de proveedor  %s ,Buscando por descripcion ", proveedor))
+		return GetDataMercadolibre(w, r)
+	}
 	fmt.Println("Fin scraping Mercado Libre ")
 	return listItems
 
@@ -98,7 +102,7 @@ func GetDataMercadolibre(w http.ResponseWriter, r *http.Request) []Items {
 	genero := r.URL.Query().Get("genero")
 	talle := r.URL.Query().Get("Talle")
 	material := r.URL.Query().Get("material")
-	search := fmt.Sprintf("%s ", coditm)
+	search := fmt.Sprintf("%s %s %s", categoria, marca, coditm)
 	if material == "SINTETICO" {
 		material = "Sintético"
 	}
@@ -194,8 +198,8 @@ func scraping(page *rod.Page, proveedor string) []Items {
 			price := elme.MustElement("span.andes-money-amount__fraction").MustText()
 			item.Precio = price
 		} else {
-			item.PrecioAntiguo = isCuttentPrice.MustElement("span.andes-money-amount__fraction").MustText()
-			item.Precio = elme.MustElement("span.andes-money-amount__fraction").MustText()
+			item.Precio = isCuttentPrice.MustElement("span.andes-money-amount__fraction").MustText()
+			item.PrecioAntiguo = elme.MustElement("span.andes-money-amount__fraction").MustText()
 			isExitProcentaje, err := isCuttentPrice.Element(".andes-money-amount__discount")
 			if err == nil {
 				item.Porcentaje = isExitProcentaje.MustText()
@@ -246,7 +250,6 @@ func applyFilter(page *rod.Page, key, filter string) *rod.Page {
 				// fmt.Println(filtro)
 				if filtro == key {
 					listLink := item.MustElements("a.ui-search-link")
-					time.Sleep(1 * time.Second)
 					for i, linkgenero := range listLink {
 						if i+1 >= len(listLink) {
 							modalsLink, err := item.Element("a.ui-search-modal__link")
