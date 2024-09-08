@@ -26,10 +26,13 @@ func GetDataNike(w http.ResponseWriter, r *http.Request) []Items {
 	url, err := launcher.New().
 		Headless(true).  // Ejecutar en modo no-headless para ser menos detectable
 		NoSandbox(true). // Omitir la caja de arena para evitar detección
-		Leakless(true).  // Desactivar los argumentos que revelan el modo headless
-		Devtools(true).  // Permitir herramientas de desarrollador para parecer más real
+
+		Leakless(true). // Desactivar los argumentos que revelan el modo headless
+		Devtools(true). // Permitir herramientas de desarrollador para parecer más real
 		Launch()
 	if err != nil {
+		fmt.Println(err)
+		LoggerError(err.Error())
 		http.Error(w, "Error launching browser", http.StatusInternalServerError)
 		return nil
 	}

@@ -20,6 +20,8 @@ func GetDataMercadolibreNike(w http.ResponseWriter, r *http.Request) []Items {
 		NoSandbox(true).
 		Launch()
 	if err != nil {
+		fmt.Println(err)
+		LoggerError(err.Error())
 		http.Error(w, "Error launching browser", http.StatusInternalServerError)
 		return nil
 	}
@@ -51,6 +53,8 @@ func GetDataMercadolibreAdidas(w http.ResponseWriter, r *http.Request) []Items {
 		NoSandbox(true).
 		Launch()
 	if err != nil {
+		fmt.Println(err)
+		LoggerError(err.Error())
 		http.Error(w, "Error launching browser", http.StatusInternalServerError)
 		return nil
 	}
@@ -77,6 +81,8 @@ func GetDataMercadolibrePuma(w http.ResponseWriter, r *http.Request) []Items {
 		NoSandbox(true).
 		Launch()
 	if err != nil {
+		fmt.Println(err)
+		LoggerError(err.Error())
 		http.Error(w, "Error launching browser", http.StatusInternalServerError)
 		return nil
 	}
@@ -118,6 +124,8 @@ func GetDataMercadolibre(w http.ResponseWriter, r *http.Request) []Items {
 		Launch()
 	if err != nil {
 		fmt.Println("Erorrrrrrrr")
+		fmt.Println(err)
+		LoggerError(err.Error())
 		fmt.Println(err)
 	}
 	browser := rod.New().ControlURL(url).

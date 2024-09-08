@@ -21,8 +21,10 @@ func GetDataAdidas(w http.ResponseWriter, r *http.Request) []Items {
 	} else {
 		urlSearch = fmt.Sprintf("https://www.adidas.com.ar/search?q=%s", proveedor)
 	}
-	url, err := launcher.New().Headless(true).Launch()
+	url, err := launcher.New().Headless(true).NoSandbox(true).Launch()
 	if err != nil {
+		fmt.Println(err)
+		LoggerError(err.Error())
 		http.Error(w, "Error launching browser", http.StatusInternalServerError)
 		return nil
 	}

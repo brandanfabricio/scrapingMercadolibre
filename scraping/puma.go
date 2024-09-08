@@ -22,8 +22,10 @@ func GetDataPuma(w http.ResponseWriter, r *http.Request) []Items {
 		urlSearch = fmt.Sprintf("https://ar.puma.com/segmentifysearch?q=%s_*", search)
 	}
 	// iniciar brouser
-	url, err := launcher.New().Headless(true).Launch()
+	url, err := launcher.New().Headless(true).NoSandbox(true).Launch()
 	if err != nil {
+		fmt.Println(err)
+		LoggerError(err.Error())
 		http.Error(w, "Error launching browser", http.StatusInternalServerError)
 		return nil
 	}
