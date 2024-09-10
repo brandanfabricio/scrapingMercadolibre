@@ -72,11 +72,11 @@ func GetDataPuma(w http.ResponseWriter, r *http.Request) []Items {
 			log.Fatalf("Could not get the product node: %v", err)
 		}
 		item.Precio = price
-		url, err := product.Locator(".ProductCard-Link").GetAttribute("href")
-		if err != nil {
-// 				log.Fatalf("Could not get the product node: %v", err)
+		// url, err := product.Locator(".ProductCard-Link").GetAttribute("href")
+		// if err != nil {
+		// 	log.Fatalf("Could not get the product node: %v", err)
 		// }
-		// 		item.Url = url
+		// item.Url = url
 
 		// existOldPrice, err := product.Locator(".ProductPrice-HighPrice").TextContent()
 
