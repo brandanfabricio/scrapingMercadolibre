@@ -30,8 +30,8 @@ func GetDataPuma(w http.ResponseWriter, r *http.Request) []Items {
 	}
 	// Inicia el navegador en modo visible (no headless)
 	browser, err := pw.Chromium.Launch(playwright.BrowserTypeLaunchOptions{
-		Headless: playwright.Bool(false), // Cambia a false para ver el navegador
-		Devtools: playwright.Bool(true),  // Abre las herramientas de desarrollo (DevTools)
+		Headless: playwright.Bool(true), // Cambia a false para ver el navegador
+		Devtools: playwright.Bool(true), // Abre las herramientas de desarrollo (DevTools)
 	})
 	if err != nil {
 		log.Fatalf("No se pudo lanzar el navegador: %v", err)
@@ -72,11 +72,11 @@ func GetDataPuma(w http.ResponseWriter, r *http.Request) []Items {
 			log.Fatalf("Could not get the product node: %v", err)
 		}
 		item.Precio = price
-		// url, err := product.Locator(".ProductCard-Link").GetAttribute("href")
-		// if err != nil {
-		// 	log.Fatalf("Could not get the product node: %v", err)
+		url, err := product.Locator(".ProductCard-Link").GetAttribute("href")
+		if err != nil {
+// 				log.Fatalf("Could not get the product node: %v", err)
 		// }
-		// item.Url = url
+		// 		item.Url = url
 
 		// existOldPrice, err := product.Locator(".ProductPrice-HighPrice").TextContent()
 
