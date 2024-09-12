@@ -2,13 +2,16 @@ package scraping
 
 import (
 	"fmt"
-	"log"
 	"net/http"
+	"regexp"
+	"time"
 
-	"github.com/playwright-community/playwright-go"
+	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/launcher"
 )
 
 func GetDataPuma(w http.ResponseWriter, r *http.Request) []Items {
+
 	proveedor := r.URL.Query().Get("proveedor")
 	search := r.URL.Query().Get("search")
 
@@ -18,100 +21,134 @@ func GetDataPuma(w http.ResponseWriter, r *http.Request) []Items {
 	} else {
 		urlSearch = fmt.Sprintf("https://ar.puma.com/segmentifysearch?q=%s_*", search)
 	}
-
-	// Instala los navegadores necesarios
-	if err := playwright.Install(); err != nil {
-		log.Fatalf("Error al instalar Playwright: %v", err)
-	}
-	// Inicia Playwright
-	pw, err := playwright.Run()
+	// iniciar brouser
+	url, err := launcher.New().Headless(true).NoSandbox(true).Launch()
 	if err != nil {
-		log.Fatalf("No se pudo iniciar Playwright: %v", err)
+		fmt.Println(err)
+		LoggerError(err.Error())
+		http.Error(w, "Error launching browser", http.StatusInternalServerError)
+		return nil
 	}
-	// Inicia el navegador en modo visible (no headless)
-	browser, err := pw.Chromium.Launch(playwright.BrowserTypeLaunchOptions{
-		Headless: playwright.Bool(true), // Cambia a false para ver el navegador
-		Devtools: playwright.Bool(true), // Abre las herramientas de desarrollo (DevTools)
-	})
-	if err != nil {
-		log.Fatalf("No se pudo lanzar el navegador: %v", err)
-	}
+	browser := rod.New().ControlURL(url).MustConnect()
+	defer browser.Close()
+	// navegando
+	fmt.Println("entrando en Puma ")
+	fmt.Println(urlSearch)
+	LoggerInfo(urlSearch)
+	page := browser.MustPage(urlSearch)
 
-	// Crea una nueva página
-	page, err := browser.NewPage()
-	if err != nil {
-		log.Fatalf("No se pudo crear la página: %v", err)
-	}
-	// Navega a una SPA de ejemplo
-	fmt.Println("Entrado en ", urlSearch)
-	if _, err = page.Goto(urlSearch, playwright.PageGotoOptions{}); err != nil {
-		log.Fatalf("No se pudo navegar a la SPA: %v", err)
-	}
+	page.MustWaitLoad()
 
-	page.WaitForTimeout(1000)
+	time.Sleep(3 * time.Second)
+
+	// iniciando scraping
+	listItems := scrapingPuma(page, proveedor)
+
+	fmt.Println("fin scraping puma")
+	return listItems
+
+}
+
+func scrapingPuma(page *rod.Page, proveedor string) []Items {
+	page.MustWaitLoad()
 	fmt.Println("iniciando scraping")
-	Litm, err := page.Locator(".ProductCard").All()
+	var listItems []Items
+	// rebisando si se obtuve contendoo buscado
+	// containerPage, err := page.Elements(".ProductListPage")
+
+	containerPage, err := page.Elements(".ProductListPage")
 
 	if err != nil {
-		log.Fatalf("Could not get the product node: %v", err)
+		fmt.Println("contenido no encontrado")
+		return []Items{}
 	}
-	// li.ProductCard"
-	fmt.Println(Litm)
-	var listItems []Items
-	// var listLinkImage []string
-	for _, product := range Litm {
+	if len(containerPage) <= 0 {
+		fmt.Println("No hay datos")
+		return []Items{}
+	}
+	// obtenidndo las card
+	listProduct, err := containerPage.First().Elements("li.ProductCard")
+	if err != nil {
+		fmt.Println("No hay datos")
+		return []Items{}
+	}
+	for _, product := range listProduct {
 		item := Items{}
-		title, err := product.Locator(".ProductCard-Name").TextContent()
-		fmt.Println(title)
-		if err != nil {
-			log.Fatalf("Could not get the product node: %v", err)
-		}
+		// obtenedr descripcion
+		title := product.MustElement(".ProductCard-Name").MustText()
 		item.Title = title
-		price, err := product.Locator(".ProductPrice-CurrentPrice").TextContent()
-		if err != nil {
-			log.Fatalf("Could not get the product node: %v", err)
-		}
+		//obtener precio
+		price := product.MustElement(".ProductPrice-CurrentPrice").MustText()
 		item.Precio = price
-		// url, err := product.Locator(".ProductCard-Link").GetAttribute("href")
-		// if err != nil {
-		// 	log.Fatalf("Could not get the product node: %v", err)
-		// }
-		// item.Url = url
+		// ProductPrice-HighPrice
 
-		// existOldPrice, err := product.Locator(".ProductPrice-HighPrice").TextContent()
+		existOldPrice, err := product.Element(".ProductPrice-HighPrice")
+		var oldPrice string
+		if err == nil {
+			oldPrice = existOldPrice.MustText()
+		} else {
+			oldPrice = ""
+		}
+		item.PrecioAntiguo = oldPrice
+		var porcentage string
+		isPorcentage, err := product.Element(".ProductPrice-PercentageLabel")
+		if err == nil {
+			porcentage = isPorcentage.MustText()
+		} else {
+			porcentage = ""
+		}
+		item.Porcentaje = porcentage
 
-		// if err == nil {
-		// 	item.PrecioAntiguo = existOldPrice
-		// }
+		// obtener url para navegar
+		url := product.MustElement(".ProductCard-Link").MustAttribute("href")
+		item.Url = *url
 
-		// isPorcentage, err := product.Locator(".ProductPrice-PercentageLabel").TextContent()
+		re := regexp.MustCompile(fmt.Sprintf(`%s-(\d+)`, proveedor))
+		match := re.FindStringSubmatch(*url)
 
-		// if err == nil {
-		// 	item.Porcentaje = isPorcentage
-		// }
+		if len(match) > 1 {
+			codigoFinal := match[0] // 107993-01
 
-		// // obtener imagenes
-		// var listLinkImage []string
-		// listImage, err := product.Locator("img.Image-Image").First().GetAttribute("src")
-		// if err == nil {
-		// 	fmt.Println("sin img")
-		// }
-		// listLinkImage = append(listLinkImage, listImage)
-		// item.Imagenes = listLinkImage
+			if codigoFinal != "" {
 
-		item.CodProveedor = proveedor
+				item.CodProveedor = codigoFinal
+			}
+
+		}
+
+		// obtener imagenes
+		var listLinkImage []string
+		listImage := product.MustElements("img.Image-Image")
+
+		var link string
+		linkImage, err := listImage.First().Attribute("src")
+
+		if err != nil {
+			link = ""
+		}
+		link = *linkImage
+		listLinkImage = append(listLinkImage, link)
+
 		item.Marca = "Puma"
+		item.Vendedor = "Puma"
+		item.Imagenes = listLinkImage
 		listItems = append(listItems, item)
-
 	}
-
-	// Cierra el navegador
-	if err = browser.Close(); err != nil {
-		log.Fatalf("No se pudo cerrar el navegador: %v", err)
-	}
-	if err = pw.Stop(); err != nil {
-		log.Fatalf("No se pudo detener Playwright: %v", err)
-	}
-
 	return listItems
 }
+
+/**
+pr := page.MustEval(`() => document.querySelector('.ProductListPage') !== null`)
+
+	fmt.Println("######################")
+	fmt.Println(pr)
+	fmt.Println("######################")
+
+	.verificar si existe el elemento
+	.si no existe recien espereo
+	.luego voy a hacer la busqueda
+	.tratar de evitar el sleep
+
+
+
+*/
