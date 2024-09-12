@@ -1,17 +1,16 @@
 package scraping
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"regexp"
 	"time"
 
 	"github.com/go-rod/rod"
-	"github.com/go-rod/rod/lib/launcher"
 )
 
-func GetDataPuma(w http.ResponseWriter, r *http.Request) []Items {
-
+func GetDataPuma(ctx context.Context, r *http.Request) []Items {
 	proveedor := r.URL.Query().Get("proveedor")
 	search := r.URL.Query().Get("search")
 
@@ -21,33 +20,65 @@ func GetDataPuma(w http.ResponseWriter, r *http.Request) []Items {
 	} else {
 		urlSearch = fmt.Sprintf("https://ar.puma.com/segmentifysearch?q=%s_*", search)
 	}
-	// iniciar brouser
-	url, err := launcher.New().Headless(true).NoSandbox(true).Launch()
-	if err != nil {
-		fmt.Println(err)
-		LoggerError(err.Error())
-		http.Error(w, "Error launching browser", http.StatusInternalServerError)
-		return nil
-	}
-	browser := rod.New().ControlURL(url).MustConnect()
-	defer browser.Close()
-	// navegando
+
 	fmt.Println("entrando en Puma ")
 	fmt.Println(urlSearch)
 	LoggerInfo(urlSearch)
-	page := browser.MustPage(urlSearch)
+
+	page, err := bm.GetPage(ctx, urlSearch)
+	if err != nil {
+		fmt.Println("Error al obtener la página:", err)
+		return nil
+	}
+	defer page.Close()
 
 	page.MustWaitLoad()
-
 	time.Sleep(3 * time.Second)
 
-	// iniciando scraping
 	listItems := scrapingPuma(page, proveedor)
 
 	fmt.Println("fin scraping puma")
 	return listItems
-
 }
+
+// func GetDataPuma(w http.ResponseWriter, r *http.Request) []Items {
+
+// 	proveedor := r.URL.Query().Get("proveedor")
+// 	search := r.URL.Query().Get("search")
+
+// 	var urlSearch string
+// 	if proveedor != "" {
+// 		urlSearch = fmt.Sprintf("https://ar.puma.com/segmentifysearch?q=%s_*", proveedor)
+// 	} else {
+// 		urlSearch = fmt.Sprintf("https://ar.puma.com/segmentifysearch?q=%s_*", search)
+// 	}
+// 	// iniciar brouser
+// 	url, err := launcher.New().Headless(true).NoSandbox(true).Launch()
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		LoggerError(err.Error())
+// 		http.Error(w, "Error launching browser", http.StatusInternalServerError)
+// 		return nil
+// 	}
+// 	browser := rod.New().ControlURL(url).MustConnect()
+// 	defer browser.Close()
+// 	// navegando
+// 	fmt.Println("entrando en Puma ")
+// 	fmt.Println(urlSearch)
+// 	LoggerInfo(urlSearch)
+// 	page := browser.MustPage(urlSearch)
+
+// 	page.MustWaitLoad()
+
+// 	time.Sleep(3 * time.Second)
+
+// 	// iniciando scraping
+// 	listItems := scrapingPuma(page, proveedor)
+
+// 	fmt.Println("fin scraping puma")
+// 	return listItems
+
+// }
 
 func scrapingPuma(page *rod.Page, proveedor string) []Items {
 	page.MustWaitLoad()

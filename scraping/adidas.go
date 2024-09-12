@@ -1,6 +1,7 @@
 package scraping
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -12,7 +13,7 @@ import (
 	"github.com/go-rod/rod/lib/launcher"
 )
 
-func GetDataAdidas(w http.ResponseWriter, r *http.Request) []Items {
+func GetDataAdidas(ctx context.Context, r *http.Request) []Items {
 	proveedor := r.URL.Query().Get("proveedor")
 	search := r.URL.Query().Get("search")
 	var urlSearch string
@@ -25,7 +26,7 @@ func GetDataAdidas(w http.ResponseWriter, r *http.Request) []Items {
 	if err != nil {
 		fmt.Println(err)
 		LoggerError(err.Error())
-		http.Error(w, "Error launching browser", http.StatusInternalServerError)
+		// http.Error(w, "Error launching browser", http.StatusInternalServerError)
 		return nil
 	}
 	browser := rod.New().ControlURL(url).MustConnect() //
