@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/go-rod/rod"
-	"github.com/go-rod/rod/lib/launcher"
-	"github.com/go-rod/rod/lib/proto"
 )
 
 func GetDataNike(ctx context.Context, r *http.Request) []Items {
@@ -24,32 +22,17 @@ func GetDataNike(ctx context.Context, r *http.Request) []Items {
 	} else {
 		urlSearch = fmt.Sprintf("https://www.nike.com.ar/%s?_q=%s&map=ft", proveedor, proveedor)
 	}
-	url, err := launcher.New().
-		Headless(true).  // Ejecutar en modo no-headless para ser menos detectable
-		NoSandbox(true). // Omitir la caja de arena para evitar detección
 
-		Leakless(true). // Desactivar los argumentos que revelan el modo headless
-		Devtools(true). // Permitir herramientas de desarrollador para parecer más real
-		Launch()
-	if err != nil {
-		fmt.Println(err)
-		LoggerError(err.Error())
-		// http.Error(w, "Error launching browser", http.StatusInternalServerError)
-		return nil
-	}
-	browser := rod.New().ControlURL(url).MustConnect()
-	defer browser.Close()
-	incognitoContext := browser.MustIncognito()
-	defer incognitoContext.Close()
-	fmt.Println("entrando en nike ")
+	fmt.Println("entrando en Nike ")
 	fmt.Println(urlSearch)
 	LoggerInfo(urlSearch)
-	userAgent := &proto.NetworkSetUserAgentOverride{
-		UserAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+	page, err := bm.GetPage(ctx, urlSearch)
+
+	if err != nil {
+		fmt.Println("Error al obtener la página:", err)
+		return nil
 	}
-	// checkbox
-	page := incognitoContext.MustPage(urlSearch)
-	page.MustSetUserAgent(userAgent)
+	defer page.Close()
 	page.MustWaitLoad()
 	// checkbox, err := page.Element(`.no-js`)
 	// Verificar si se ha encontrado un CAPTCHA
@@ -62,8 +45,6 @@ func GetDataNike(ctx context.Context, r *http.Request) []Items {
 				LoggerWarning("CAPTCHA encontrado, cerrando página y reintentando...")
 				// Cerrar la página y reabrir una nueva instancia
 				page.Close()
-				page = incognitoContext.MustPage(urlSearch)
-				page.MustSetUserAgent(userAgent)
 				page.MustWaitLoad()
 			} else {
 				break
@@ -76,8 +57,6 @@ func GetDataNike(ctx context.Context, r *http.Request) []Items {
 	if len(listItems) <= 0 {
 		LoggerInfo("Utimo intento")
 		page.Close()
-		page = incognitoContext.MustPage(urlSearch)
-		page.MustSetUserAgent(userAgent)
 		page.MustWaitLoad()
 		listItems = scrapingNike(page, proveedor)
 	}

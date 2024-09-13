@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
+	"github.com/go-rod/rod/lib/proto"
 )
 
 // BrowserManager es una estructura para manejar la instancia del navegador.
@@ -26,12 +27,42 @@ func NewBrowserManager() *BrowserManager {
 
 // initializeBrowser inicializa la instancia del navegador.
 func (bm *BrowserManager) initializeBrowser() {
-	url, err := launcher.New().Headless(true).NoSandbox(true).Launch()
+	url, err := launcher.New().
+		Headless(true).
+		NoSandbox(true).
+		Leakless(false).             // Evitar filtrado de datos del navegador
+		Devtools(false).             // Desactivar devtools
+		Set("disable-web-security"). // Desactivar seguridad web (cors)
+		Set("disable-extensions").   // Desactivar extensiones
+		Set("disable-blink-features", "AutomationControlled").
+		Launch()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	bm.browser = rod.New().ControlURL(url).MustConnect()
+
+	// Configurar el navegador para que parezca más real
+	// bm.browser.MustIgnoreCertErrors(true). // Ignorar errores de certificados SSL
+	// 					MustHandleAuth(func(_ *proto.FetchAuthRequired) (username, password string) {
+	// 		return "", "" // Manejar cualquier autenticación
+	// 	})
+
+	// Configurar el User-Agent y otros headers
+	bm.browser.MustPage().MustSetUserAgent(&proto.NetworkSetUserAgentOverride{
+		UserAgent:      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+		AcceptLanguage: "en-US,en;q=0.9",
+		Platform:       "Windows",
+	})
+
+	// Habilitar la cache del navegador
+	// bm.browser.MustPage().MustSetExtraHeaders(proto.NetworkSetExtraHTTPHeaders{
+	// 	Headers: map[string]interface{}{
+	// 		"Accept-Language": "en-US,en;q=0.9",
+	// 		"DNT":             "1", // Do Not Track header
+	// 	},
+	// })
+
 }
 
 // GetPage devuelve una nueva página utilizando la instancia compartida del navegador.
@@ -44,6 +75,9 @@ func (bm *BrowserManager) GetPage(ctx context.Context, url string) (*rod.Page, e
 	defer bm.mu.Unlock()
 
 	page := bm.browser.MustPage(url)
+
+	// Simular movimiento del mouse para evitar detección de bots
+	page.Mouse.MustMoveTo(100, 100)
 
 	// Gestiona la cancelación de la página
 	select {
