@@ -13,8 +13,8 @@ func main() {
 	// http.HandleFunc("GET /api/adidas", scraping.GetDataAdidas)
 	http.HandleFunc("GET /api/scraping", scraping.WebScraping)
 	http.HandleFunc("GET /api/scrapingMercadoLibre", scraping.WebScrapingMercadoLibre)
-	fmt.Println("Servidor corriendo en el puerto 3000")
-	http.ListenAndServe(":3000", AddCORSHeaders(http.DefaultServeMux))
+	fmt.Println("Servidor corriendo en el puerto 8080")
+	http.ListenAndServe(":8080", AddCORSHeaders(http.DefaultServeMux))
 
 }
 
