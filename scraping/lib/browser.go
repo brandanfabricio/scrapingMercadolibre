@@ -44,7 +44,7 @@ func (brm *BrowserManager) initializeBrowser() {
 		fmt.Println("Error en creacion de laucher ", err)
 	}
 	brm.browser = rod.New().
-		ControlURL(laucher).MustConnect().Timeout(30 * time.Second).CancelTimeout()
+		ControlURL(laucher).MustConnect().Timeout(70 * time.Second).CancelTimeout()
 	// Habilitar caché del navegador
 	// brm.browser.MustPage().SetCacheEnabled
 
@@ -79,7 +79,7 @@ func (brm *BrowserManager) GetPage(ctx context.Context, url string) (*rod.Page, 
 
 	// Reinicia el temporizador de inactividad cada vez que se llama a GetPage
 	brm.startIdleTimer()
-	page := brm.browser.Timeout(30 * time.Second).CancelTimeout().MustPage(url) // Timeout extendido para manejar internet lento
+	page := brm.browser.Timeout(70 * time.Second).CancelTimeout().MustPage(url) // Timeout extendido para manejar internet lento
 
 	page.Mouse.MustMoveTo(100, 45) // Simular movimiento del mouse para evitar detección de bots
 
@@ -117,8 +117,8 @@ func (brm *BrowserManager) startIdleTimer() {
 	if brm.idleTimer != nil {
 		brm.idleTimer.Stop()
 	}
-	// Iniciar un nuevo temporizador de 30 segundos
-	brm.idleTimer = time.AfterFunc(30*time.Second, func() {
+	// Iniciar un nuevo temporizador de 60 segundos
+	brm.idleTimer = time.AfterFunc(120*time.Second, func() {
 		fmt.Println("Inactividad detectada. Cerrando navegador.")
 		brm.Close() // Cierra el navegador
 		// brm.KillChromeProcesses() // Mata los procesos de Chrome
