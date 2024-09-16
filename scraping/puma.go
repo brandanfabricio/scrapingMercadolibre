@@ -30,25 +30,29 @@ func GetDataPuma(ctx context.Context, r *http.Request) []Items {
 		return nil
 	}
 	defer page.Close()
+	done := make(chan bool)
+	go func() {
+		page.MustWaitLoad()
+		time.Sleep(2 * time.Second)
+		done <- true
+	}()
 
-	page.MustWaitLoad()
-	time.Sleep(2 * time.Second)
+	select {
+	case <-done:
+		listItems := scrapingPuma(page, proveedor)
+		fmt.Println("fin scraping puma")
+		return listItems
+	case <-ctx.Done():
+		fmt.Println("Timeout o contexto cancelado en Puma")
+		return []Items{}
+	}
 
-	listItems := scrapingPuma(page, proveedor)
-
-	fmt.Println("fin scraping puma")
-	return listItems
 }
 
 func scrapingPuma(page *rod.Page, proveedor string) []Items {
-	page.MustWaitLoad()
 	fmt.Println("iniciando scraping")
 	var listItems []Items
-	// rebisando si se obtuve contendoo buscado
-	// containerPage, err := page.Elements(".ProductListPage")
-
 	containerPage, err := page.Elements(".ProductListPage")
-
 	if err != nil {
 		fmt.Println("contenido no encontrado")
 		return []Items{}
