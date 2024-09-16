@@ -52,7 +52,7 @@ func WebScraping(w http.ResponseWriter, r *http.Request) {
 		"mercadoLibre": []Items{},
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
 	// defer bm.KillChromeProcesses()
 
