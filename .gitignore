@@ -1,7 +1,7 @@
 app.log
-tmp
-tmp/main.exe
-tmp/build-errors.log
+/tmp
+/tmp/main.exe
+/tmp/build-errors.log
 build
 .air.toml
 test.go
