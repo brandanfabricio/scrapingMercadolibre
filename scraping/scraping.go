@@ -22,10 +22,11 @@ func handlePanic() {
 func WebScrapingMercadoLibre(w http.ResponseWriter, r *http.Request) {
 	var mercadolibreItem []Items
 	proveedor := r.URL.Query().Get("marca")
-
+	ctx, cancel := context.WithTimeout(r.Context(), 70*time.Second)
+	defer cancel()
 	switch proveedor {
 	case "PUMA":
-		mercadolibreItem = GetDataMercadolibrePuma(w, r)
+		mercadolibreItem = GetDataMercadolibrePuma(ctx, r)
 	case "ADIDAS":
 		mercadolibreItem = GetDataMercadolibreAdidas(w, r)
 	case "NIKE":

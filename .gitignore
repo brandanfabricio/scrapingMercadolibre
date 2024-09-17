@@ -3,7 +3,8 @@ app.log
 /tmp/main.exe
 /tmp/build-errors.log
 build
-.air.toml
+air.toml
 test.go
 *.html
 makefile
+.vscode

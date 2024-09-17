@@ -1,6 +1,7 @@
 package scraping
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -73,31 +74,37 @@ func GetDataMercadolibreAdidas(w http.ResponseWriter, r *http.Request) []Items {
 
 }
 
-func GetDataMercadolibrePuma(w http.ResponseWriter, r *http.Request) []Items {
+func GetDataMercadolibrePuma(ctx context.Context, r *http.Request) []Items {
 	proveedor := r.URL.Query().Get("proveedor")
 	search := proveedor
-	url, err := launcher.New().
-		Headless(true).
-		NoSandbox(true).
-		Launch()
+
+	fmt.Println("entrando en mercado libre ")
+
+	page, err := bm.GetPage(ctx, "https://www.mercadolibre.com.ar/")
 	if err != nil {
-		fmt.Println(err)
-		LoggerError(err.Error())
-		http.Error(w, "Error launching browser", http.StatusInternalServerError)
+		fmt.Println("Error al obtener la página:", err)
 		return nil
 	}
-	browser := rod.New().ControlURL(url).
-		MustConnect().
-		MustIgnoreCertErrors(false)
-	defer browser.Close()
-	fmt.Println("entrando en mercado libre ")
-	page := browser.MustPage("https://www.mercadolibre.com.ar/")
+	defer page.Close()
+	done := make(chan bool)
+	go func() {
+		page.MustElement("#cb1-edit").MustInput(search)
+		page.MustElement(".nav-search-btn").MustClick()
+		page.MustWaitLoad()
+		done <- true
+	}()
+
+	select {
+	case <-done:
+		listItems := scraping(page, proveedor)
+		fmt.Println("Fin scraping Mercado Libre ")
+		return listItems
+	case <-ctx.Done():
+		fmt.Println("Timeout o contexto cancelado en Puma ", ctx.Done())
+		return []Items{}
+	}
+
 	// Llenar el formulario y hacer clic en el botón de búsqueda
-	page.MustElement("#cb1-edit").MustInput(search)
-	page.MustElement(".nav-search-btn").MustClick()
-	listItems := scraping(page, proveedor)
-	fmt.Println("Fin scraping Mercado Libre ")
-	return listItems
 
 }
 
