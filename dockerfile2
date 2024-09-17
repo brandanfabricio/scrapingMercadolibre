@@ -1,0 +1,35 @@
+# Usar la imagen base de Go con Alpine
+FROM golang:1.22.5-alpine
+
+# Instalar dependencias
+RUN apk --no-cache add \
+    git upx ca-certificates \
+    chromium \
+    harfbuzz \
+    nss \
+    freetype \
+    ttf-freefont \
+    alsa-lib \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main
+
+# Definir el directorio de trabajo
+WORKDIR /app
+
+# Copiar los archivos de dependencias
+COPY ["go.mod", "go.sum", "./"]
+
+# Descargar los módulos necesarios
+RUN go mod download
+
+# Copiar el resto del código
+COPY . .
+
+# Construir el binario
+RUN go build -ldflags="-s -w" -o app .
+
+# Comprimir el binario con UPX (opcional si lo necesitas para reducir el tamaño)
+RUN upx app || true  # `|| true` para que no falle si `upx` no está disponible
+
+# Ejecutar el binario al iniciar el contenedor
+CMD ["./app"]
