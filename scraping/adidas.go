@@ -32,12 +32,24 @@ func GetDataAdidas(ctx context.Context, r *http.Request) []Items {
 		return nil
 	}
 	defer page.Close()
-	page.MustWaitLoad()
+	done := make(chan bool)
 
-	time.Sleep(2 * time.Second)
-	listItems := scrapingAdidas(page, proveedor)
-	fmt.Println("fin adidas")
-	return listItems
+	go func() {
+		page.MustWaitLoad()
+		time.Sleep(2 * time.Second)
+		done <- true
+	}()
+
+	select {
+	case <-done:
+		listItems := scrapingAdidas(page, proveedor)
+		fmt.Println("fin adidas")
+		return listItems
+	case <-ctx.Done():
+		fmt.Println("Timeout o contexto cancelado en Puma ", ctx.Done())
+		return []Items{}
+	}
+
 }
 func scrapingAdidas(page *rod.Page, proveedor string) []Items {
 	page.MustWaitLoad()

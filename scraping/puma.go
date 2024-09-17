@@ -43,7 +43,7 @@ func GetDataPuma(ctx context.Context, r *http.Request) []Items {
 		fmt.Println("fin scraping puma")
 		return listItems
 	case <-ctx.Done():
-		fmt.Println("Timeout o contexto cancelado en Puma")
+		fmt.Println("Timeout o contexto cancelado en Puma ", ctx.Done())
 		return []Items{}
 	}
 
