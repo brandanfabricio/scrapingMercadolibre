@@ -30,9 +30,9 @@ func WebScrapingMercadoLibre(w http.ResponseWriter, r *http.Request) {
 	case "ADIDAS":
 		mercadolibreItem = GetDataMercadolibreAdidas(ctx, r)
 	case "NIKE":
-		mercadolibreItem = GetDataMercadolibreNike(w, r)
+		mercadolibreItem = GetDataMercadolibreNike(ctx, r)
 	default:
-		mercadolibreItem = GetDataMercadolibre(w, r)
+		mercadolibreItem = GetDataMercadolibre(ctx, r)
 	}
 
 	data := map[string]interface{}{

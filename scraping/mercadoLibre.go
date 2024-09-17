@@ -9,40 +9,42 @@ import (
 	"unicode"
 
 	"github.com/go-rod/rod"
-	"github.com/go-rod/rod/lib/launcher"
 	"golang.org/x/text/unicode/norm"
 )
 
-func GetDataMercadolibreNike(w http.ResponseWriter, r *http.Request) []Items {
+func GetDataMercadolibreNike(ctx context.Context, r *http.Request) []Items {
 	proveedor := r.URL.Query().Get("proveedor")
 	search := proveedor
-	url, err := launcher.New().
-		Headless(true).
-		NoSandbox(true).
-		Launch()
+
+	fmt.Println("entrando en mercado libre ")
+
+	page, err := bm.GetPage(ctx, "https://www.mercadolibre.com.ar/")
 	if err != nil {
-		fmt.Println(err)
-		LoggerError(err.Error())
-		http.Error(w, "Error launching browser", http.StatusInternalServerError)
+		fmt.Println("Error al obtener la página:", err)
 		return nil
 	}
-	browser := rod.New().ControlURL(url).
-		MustConnect().
-		MustIgnoreCertErrors(false)
-	defer browser.Close()
-	fmt.Println("entrando en mercado libre ")
-	page := browser.MustPage("https://www.mercadolibre.com.ar/")
-	// Llenar el formulario y hacer clic en el botón de búsqueda
-	LoggerInfo("Bucando " + search)
-	page.MustElement("#cb1-edit").MustInput(search)
-	page.MustElement(".nav-search-btn").MustClick()
-	listItems := scraping(page, proveedor)
-	if len(listItems) <= 0 {
-		LoggerInfo(fmt.Sprintf("No se encontro producto de nike por codigo de proveedor  %s ,Buscando por descripcion ", proveedor))
-		return GetDataMercadolibre(w, r)
+	done := make(chan bool)
+	go func() {
+		LoggerInfo("Bucando " + search)
+		page.MustElement("#cb1-edit").MustInput(search)
+		page.MustElement(".nav-search-btn").MustClick()
+		page.MustWaitLoad()
+		done <- true
+	}()
+
+	select {
+	case <-done:
+		listItems := scraping(page, proveedor)
+		if len(listItems) <= 0 {
+			LoggerInfo(fmt.Sprintf("No se encontro producto de nike por codigo de proveedor  %s ,Buscando por descripcion ", proveedor))
+			return GetDataMercadolibre(ctx, r)
+		}
+		fmt.Println("Fin scraping Mercado Libre ")
+		return listItems
+	case <-ctx.Done():
+		fmt.Println("Timeout o contexto cancelado en Puma ", ctx.Done())
+		return []Items{}
 	}
-	fmt.Println("Fin scraping Mercado Libre ")
-	return listItems
 
 }
 
@@ -112,7 +114,7 @@ func GetDataMercadolibrePuma(ctx context.Context, r *http.Request) []Items {
 	}
 }
 
-func GetDataMercadolibre(w http.ResponseWriter, r *http.Request) []Items {
+func GetDataMercadolibre(ctx context.Context, r *http.Request) []Items {
 	coditm := r.URL.Query().Get("search")
 	marca := r.URL.Query().Get("marca")
 	categoria := r.URL.Query().Get("categoria")
@@ -129,34 +131,35 @@ func GetDataMercadolibre(w http.ResponseWriter, r *http.Request) []Items {
 	fmt.Println(search)
 	// page := rod.New().MustConnect().MustPage("https://listado.mercadolibre.com.ar/mochilas-hombre#D[A:mochilas%20hombre%20]")
 	// Launch a headless browser
-	url, err := launcher.New().
-		Headless(true).
-		NoSandbox(true).
-		Launch()
-	if err != nil {
-		fmt.Println("Erorrrrrrrr")
-		fmt.Println(err)
-		LoggerError(err.Error())
-		fmt.Println(err)
-	}
-	browser := rod.New().ControlURL(url).
-		MustConnect().
-		MustIgnoreCertErrors(false)
-	defer browser.Close()
 	fmt.Println("entrando en mercado libre ")
-	page := browser.MustPage("https://www.mercadolibre.com.ar/")
-	// Llenar el formulario y hacer clic en el botón de búsqueda
-	page.MustElement("#cb1-edit").MustInput(search)
-	page.MustElement(".nav-search-btn").MustClick()
-	// class="ui-search-layout__item"
-	// ui-search-filter-groups
-	var listItems []Items
-	fils := []string{"Marca:" + marca, "Género:" + genero, "Categorías:" + categoria, "Talle:" + talle, "Material principal:" + material, "Condición:Nuevo", "Tiendas oficiales:Solo tiendas oficiales"}
-	getMarc(page, fils)
-	listItems = scraping(page, "")
-	// // Guardar los datos en un archivo JSON
-	fmt.Println("fin")
-	return listItems
+	page, err := bm.GetPage(ctx, "https://www.mercadolibre.com.ar/")
+	if err != nil {
+		fmt.Println("Error al obtener la página:", err)
+		return nil
+	}
+	defer page.Close()
+	done := make(chan bool)
+	go func() {
+		page.MustWaitLoad()
+		page.MustElement("#cb1-edit").MustInput(search)
+		page.MustElement(".nav-search-btn").MustClick()
+		done <- true
+	}()
+
+	select {
+	case <-done:
+		var listItems []Items
+		fils := []string{"Marca:" + marca, "Género:" + genero, "Categorías:" + categoria, "Talle:" + talle, "Material principal:" + material, "Condición:Nuevo", "Tiendas oficiales:Solo tiendas oficiales"}
+		getMarc(page, fils)
+		listItems = scraping(page, "")
+		// // Guardar los datos en un archivo JSON
+		fmt.Println("fin")
+		return listItems
+	case <-ctx.Done():
+		fmt.Println("Timeout o contexto cancelado en Puma ", ctx.Done())
+		return []Items{}
+	}
+
 }
 
 func scraping(page *rod.Page, proveedor string) []Items {
