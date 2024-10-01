@@ -12,8 +12,12 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
+var isCoincidence = false
+
 func GetDataMercadolibreNike(ctx context.Context, r *http.Request) []Items {
+	isCoincidence = true
 	proveedor := r.URL.Query().Get("proveedor")
+	producSearch := r.URL.Query().Get("search")
 	search := proveedor
 
 	fmt.Println("entrando en mercado libre ")
@@ -31,13 +35,12 @@ func GetDataMercadolibreNike(ctx context.Context, r *http.Request) []Items {
 		page.MustWaitLoad()
 		done <- true
 	}()
-
+	defer page.Close()
 	select {
 	case <-done:
-		listItems := scraping(page, proveedor)
+		listItems := scraping(page, proveedor, producSearch)
 		if len(listItems) <= 0 {
-			LoggerInfo(fmt.Sprintf("No se encontro producto de nike por codigo de proveedor  %s ,Buscando por descripcion ", proveedor))
-			return GetDataMercadolibre(ctx, r)
+			listItems = GetDataMercadolibre(ctx, r)
 		}
 		fmt.Println("Fin scraping Mercado Libre ")
 		return listItems
@@ -49,7 +52,9 @@ func GetDataMercadolibreNike(ctx context.Context, r *http.Request) []Items {
 }
 
 func GetDataMercadolibreAdidas(ctx context.Context, r *http.Request) []Items {
+	isCoincidence = true
 	proveedor := r.URL.Query().Get("proveedor")
+	producSearch := r.URL.Query().Get("search")
 	search := proveedor
 
 	fmt.Println("entrando en mercado libre ")
@@ -74,7 +79,10 @@ func GetDataMercadolibreAdidas(ctx context.Context, r *http.Request) []Items {
 
 	select {
 	case <-done:
-		listItems := scraping(page, proveedor)
+		listItems := scraping(page, proveedor, producSearch)
+		if len(listItems) <= 0 {
+			listItems = GetDataMercadolibre(ctx, r)
+		}
 		fmt.Println("Fin scraping Mercado Libre ")
 		return listItems
 	case <-ctx.Done():
@@ -85,7 +93,11 @@ func GetDataMercadolibreAdidas(ctx context.Context, r *http.Request) []Items {
 }
 
 func GetDataMercadolibrePuma(ctx context.Context, r *http.Request) []Items {
+	isCoincidence = true
+
 	proveedor := r.URL.Query().Get("proveedor")
+	producSearch := r.URL.Query().Get("search")
+
 	search := proveedor
 
 	fmt.Println("entrando en mercado libre ")
@@ -105,7 +117,10 @@ func GetDataMercadolibrePuma(ctx context.Context, r *http.Request) []Items {
 
 	select {
 	case <-done:
-		listItems := scraping(page, proveedor)
+		listItems := scraping(page, proveedor, producSearch)
+		if len(listItems) <= 0 {
+			listItems = GetDataMercadolibre(ctx, r)
+		}
 		fmt.Println("Fin scraping Mercado Libre ")
 		return listItems
 	case <-ctx.Done():
@@ -151,7 +166,7 @@ func GetDataMercadolibre(ctx context.Context, r *http.Request) []Items {
 		var listItems []Items
 		fils := []string{"Marca:" + marca, "Género:" + genero, "Categorías:" + categoria, "Talle:" + talle, "Material principal:" + material, "Condición:Nuevo", "Tiendas oficiales:Solo tiendas oficiales"}
 		getMarc(page, fils)
-		listItems = scraping(page, "")
+		listItems = scraping(page, "", "")
 		// // Guardar los datos en un archivo JSON
 		fmt.Println("fin")
 		return listItems
@@ -162,7 +177,7 @@ func GetDataMercadolibre(ctx context.Context, r *http.Request) []Items {
 
 }
 
-func scraping(page *rod.Page, proveedor string) []Items {
+func scraping(page *rod.Page, proveedor string, producSearch string) []Items {
 	fmt.Println("Iniciado scraping")
 	page.MustWaitLoad()
 	listItems := []Items{}
@@ -186,6 +201,20 @@ func scraping(page *rod.Page, proveedor string) []Items {
 		item := Items{}
 		var saller string
 		title := elme.MustElement("h2").MustText()
+		if isCoincidence {
+			titleCompar := strings.ToLower(title)
+			producCompar := strings.ToLower(producSearch)
+			coincidence := false
+			if strings.Contains(titleCompar, producCompar) {
+				coincidence = true
+			}
+			if !coincidence {
+				return []Items{}
+			} else {
+				isCoincidence = false
+			}
+		}
+
 		item.Title = title
 		isSaller, err := elme.Element("div.poly-card__content > span.poly-component__seller")
 		if err != nil {
@@ -258,6 +287,20 @@ func applyFilter(page *rod.Page, key, filter string) *rod.Page {
 	}()
 	for i := 0; i < 1; i++ { // Intentar aplicar el filtro hasta 3 veces
 		page.MustWaitLoad()
+		time.Sleep(2 * time.Millisecond)
+		_, err := page.Eval(`(() => {
+            var scrollingElement = document.scrollingElement || document.body;
+            scrollingElement.scrollTop += 100;
+        })()`)
+		if err != nil {
+			_, err := page.Eval(`(() => {
+				var scrollingElement = document.scrollingElement || document.body;
+				scrollingElement.scrollTop += 100;
+			})()`)
+			if err != nil {
+				fmt.Println("error aplicando el scrol")
+			}
+		}
 		containerFilters, err := page.Elements(".ui-search-filter-groups")
 		if err != nil {
 			return page

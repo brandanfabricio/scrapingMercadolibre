@@ -47,7 +47,7 @@ func GetDataNike(ctx context.Context, r *http.Request) []Items {
 					fmt.Println("CAPTCHA encontrado, cerrando página y reintentando...")
 					LoggerWarning("CAPTCHA encontrado, cerrando página y reintentando...")
 					// Cerrar la página y reabrir una nueva instancia
-					page.Close()
+					defer page.Close()
 					page.MustWaitLoad()
 				} else {
 					done <- true
@@ -64,14 +64,14 @@ func GetDataNike(ctx context.Context, r *http.Request) []Items {
 		listItems := scrapingNike(page, proveedor)
 		if len(listItems) <= 0 {
 			LoggerInfo("Utimo intento")
-			page.Close()
+			defer page.Close()
 			page.MustWaitLoad()
 			listItems = scrapingNike(page, proveedor)
 		}
 		fmt.Println("fin nike")
 		return listItems
 	case <-ctx.Done():
-		fmt.Println("Timeout o contexto cancelado en Puma ", ctx.Done())
+		fmt.Println("Timeout o contexto cancelado en Nike ", ctx.Done())
 		return []Items{}
 	}
 }
