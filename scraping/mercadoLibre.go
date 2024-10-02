@@ -17,9 +17,8 @@ var isCoincidence = false
 func GetDataMercadolibreNike(ctx context.Context, r *http.Request) []Items {
 	isCoincidence = true
 	proveedor := r.URL.Query().Get("proveedor")
-	producSearch := r.URL.Query().Get("search")
+	producSearch := r.URL.Query().Get("marca")
 	search := proveedor
-
 	fmt.Println("entrando en mercado libre ")
 
 	page, err := bm.GetPage(ctx, "https://www.mercadolibre.com.ar/")
@@ -54,7 +53,7 @@ func GetDataMercadolibreNike(ctx context.Context, r *http.Request) []Items {
 func GetDataMercadolibreAdidas(ctx context.Context, r *http.Request) []Items {
 	isCoincidence = true
 	proveedor := r.URL.Query().Get("proveedor")
-	producSearch := r.URL.Query().Get("search")
+	producSearch := r.URL.Query().Get("marca")
 	search := proveedor
 
 	fmt.Println("entrando en mercado libre ")
@@ -96,8 +95,7 @@ func GetDataMercadolibrePuma(ctx context.Context, r *http.Request) []Items {
 	isCoincidence = true
 
 	proveedor := r.URL.Query().Get("proveedor")
-	producSearch := r.URL.Query().Get("search")
-
+	producSearch := r.URL.Query().Get("marca")
 	search := proveedor
 
 	fmt.Println("entrando en mercado libre ")
@@ -198,14 +196,21 @@ func scraping(page *rod.Page, proveedor string, producSearch string) []Items {
 				fmt.Println("Recover en scraping")
 			}
 		}()
+
 		item := Items{}
 		var saller string
-		title := elme.MustElement("h2").MustText()
+
+		marca, err := elme.Element("span.poly-component__brand")
+		if err != nil {
+			item.Marca = ""
+		} else {
+			item.Marca = marca.MustText()
+		}
 		if isCoincidence {
-			titleCompar := strings.ToLower(title)
+			marcCompar := strings.ToLower(item.Marca)
 			producCompar := strings.ToLower(producSearch)
 			coincidence := false
-			if strings.Contains(titleCompar, producCompar) {
+			if strings.Contains(marcCompar, producCompar) {
 				coincidence = true
 			}
 			if !coincidence {
@@ -215,6 +220,7 @@ func scraping(page *rod.Page, proveedor string, producSearch string) []Items {
 			}
 		}
 
+		title := elme.MustElement("h2").MustText()
 		item.Title = title
 		isSaller, err := elme.Element("div.poly-card__content > span.poly-component__seller")
 		if err != nil {
@@ -226,12 +232,7 @@ func scraping(page *rod.Page, proveedor string, producSearch string) []Items {
 			}
 		}
 		var linksImg []string
-		marca, err := elme.Element("span.poly-component__brand")
-		if err != nil {
-			item.Marca = ""
-		} else {
-			item.Marca = marca.MustText()
-		}
+
 		imgs := elme.MustElements("img")
 		for _, img := range imgs {
 			linkimg := img.MustAttribute("src")
@@ -298,7 +299,6 @@ func applyFilter(page *rod.Page, key, filter string) *rod.Page {
 				scrollingElement.scrollTop += 100;
 			})()`)
 			if err != nil {
-				fmt.Println("error aplicando el scrol")
 			}
 		}
 		containerFilters, err := page.Elements(".ui-search-filter-groups")

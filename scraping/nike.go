@@ -43,7 +43,7 @@ func GetDataNike(ctx context.Context, r *http.Request) []Items {
 			checkbox, err := page.Elements(`.no-js`)
 			if err == nil {
 				if len(checkbox) > 0 {
-					time.Sleep(6 * time.Second)
+					time.Sleep(3 * time.Second)
 					fmt.Println("CAPTCHA encontrado, cerrando página y reintentando...")
 					LoggerWarning("CAPTCHA encontrado, cerrando página y reintentando...")
 					// Cerrar la página y reabrir una nueva instancia

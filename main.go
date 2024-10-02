@@ -4,30 +4,24 @@ import (
 	"fmt"
 	"net/http"
 	"webScraping/scraping"
+	"webScraping/scraping/lib"
 )
 
 func main() {
 
-	// http.HandleFunc("GET /api/mercado-libre", scraping.GetDataMercadolibre)
-	// http.HandleFunc("GET /api/puma", scraping.GetDataPuma)
-	// http.HandleFunc("GET /api/adidas", scraping.GetDataAdidas)
+	defer func() {
+		if r := recover(); r != nil {
+			err := fmt.Sprintf("Recuperado del pánico: %v", r)
+			lib.LoggerError(err)
+		}
+	}()
+
 	http.HandleFunc("GET /api/scraping", scraping.WebScraping)
 	http.HandleFunc("GET /api/scrapingMercadoLibre", scraping.WebScrapingMercadoLibre)
 	fmt.Println("Servidor corriendo en el puerto 3000")
 	http.ListenAndServe(":3000", AddCORSHeaders(http.DefaultServeMux))
 
 }
-
-// func wr(n string, d string) {
-// 	file, err := os.Create(n + ".html")
-// 	if err != nil {
-// 		fmt.Println("ewr")
-// 		fmt.Println(err)
-// 	}
-// 	defer file.Close()
-// 	file.WriteString(d)
-
-// }
 
 func AddCORSHeaders(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
