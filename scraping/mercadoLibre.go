@@ -289,16 +289,11 @@ func applyFilter(page *rod.Page, key, filter string) *rod.Page {
 	for i := 0; i < 1; i++ { // Intentar aplicar el filtro hasta 3 veces
 		page.MustWaitLoad()
 		time.Sleep(2 * time.Millisecond)
-		_, err := page.Eval(`(() => {
-            var scrollingElement = document.scrollingElement || document.body;
-            scrollingElement.scrollTop += 100;
-        })()`)
+		_, err := page.Eval(`window.scrollTo(0, document.body.scrollHeight)`)
 		if err != nil {
-			_, err := page.Eval(`(() => {
-				var scrollingElement = document.scrollingElement || document.body;
-				scrollingElement.scrollTop += 100;
-			})()`)
+			_, err := page.Eval(`window.scrollTo(0, document.body.scrollHeight)`)
 			if err != nil {
+				fmt.Println("Error al hacer scrol")
 			}
 		}
 		containerFilters, err := page.Elements(".ui-search-filter-groups")
