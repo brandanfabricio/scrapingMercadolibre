@@ -6,14 +6,16 @@ import (
 	"net/http"
 	"regexp"
 	"time"
+	"webScraping/lib"
 
 	"github.com/go-rod/rod"
 )
 
 func GetDataPuma(ctx context.Context, r *http.Request) []Items {
+	// defer lib.HandlePanic()
+
 	proveedor := r.URL.Query().Get("proveedor")
 	search := r.URL.Query().Get("search")
-
 	var urlSearch string
 	if proveedor != "" {
 		urlSearch = fmt.Sprintf("https://ar.puma.com/segmentifysearch?q=%s_*", proveedor)
@@ -29,21 +31,31 @@ func GetDataPuma(ctx context.Context, r *http.Request) []Items {
 		fmt.Println("Error al obtener la página:", err)
 		return nil
 	}
-	defer page.Close()
+
+	page.Close()
+
 	done := make(chan bool)
 	go func() {
+		defer lib.HandlePanicScraping(done, page)
 		page.MustWaitLoad()
 		time.Sleep(2 * time.Second)
 		done <- true
 	}()
 
 	select {
-	case <-done:
-		listItems := scrapingPuma(page, proveedor)
+	case success := <-done:
+		var listItems []Items
+		if success {
+			listItems = scrapingPuma(page, proveedor)
+		} else {
+			listItems = []Items{}
+		}
 		fmt.Println("fin scraping puma")
 		return listItems
 	case <-ctx.Done():
-		fmt.Println("Timeout o contexto cancelado en Puma ", ctx.Done())
+		fmt.Println("Timeout o contexto cancelado en Puma ")
+		stringError := fmt.Sprintf("Timeout o contexto cancelado en Puma  %v", ctx.Done())
+		LoggerWarning(stringError)
 		return []Items{}
 	}
 

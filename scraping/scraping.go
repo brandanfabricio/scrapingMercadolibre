@@ -4,11 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"sync"
 	"time"
-	"webScraping/scraping/lib"
+	"webScraping/lib"
 )
 
 var bm = lib.NewBrowserManager()
@@ -16,7 +15,8 @@ var bm = lib.NewBrowserManager()
 // handlePanic es una función para capturar y manejar pánicos
 func handlePanic() {
 	if r := recover(); r != nil {
-		log.Printf("Recuperado del pánico: %v", r)
+		stringError := fmt.Sprintf("Recuperado del pánico: %v", r)
+		lib.LoggerError(stringError)
 	}
 }
 func WebScrapingMercadoLibre(w http.ResponseWriter, r *http.Request) {
@@ -26,12 +26,16 @@ func WebScrapingMercadoLibre(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	switch proveedor {
 	case "PUMA":
+		defer handlePanic()
 		mercadolibreItem = GetDataMercadolibrePuma(ctx, r)
 	case "ADIDAS":
+		defer handlePanic()
 		mercadolibreItem = GetDataMercadolibreAdidas(ctx, r)
 	case "NIKE":
+		defer handlePanic()
 		mercadolibreItem = GetDataMercadolibreNike(ctx, r)
 	default:
+		defer handlePanic()
 		mercadolibreItem = GetDataMercadolibre(ctx, r)
 	}
 
@@ -56,9 +60,7 @@ func WebScraping(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 70*time.Second)
 	defer cancel()
 	// defer bm.KillChromeProcesses()
-
 	proveedor := r.URL.Query().Get("marca")
-
 	switch proveedor {
 	case "PUMA":
 		wg.Add(1)

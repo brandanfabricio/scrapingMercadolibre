@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"webScraping/lib"
 
 	"github.com/go-rod/rod"
 )
@@ -35,18 +36,27 @@ func GetDataAdidas(ctx context.Context, r *http.Request) []Items {
 	done := make(chan bool)
 
 	go func() {
+		lib.HandlePanicScraping(done, page)
 		page.MustWaitLoad()
 		time.Sleep(2 * time.Second)
 		done <- true
 	}()
 
 	select {
-	case <-done:
-		listItems := scrapingAdidas(page, proveedor)
+	case success := <-done:
+		var listItems []Items
+		if success {
+			listItems = scrapingAdidas(page, proveedor)
+		} else {
+			listItems = []Items{}
+		}
 		fmt.Println("fin adidas")
 		return listItems
 	case <-ctx.Done():
-		fmt.Println("Timeout o contexto cancelado en Puma ", ctx.Done())
+		// fmt.Println("Timeout o contexto cancelado en Puma ", ctx.Done())
+		fmt.Println("Timeout o contexto cancelado en Puma ")
+		stringError := fmt.Sprintf("Timeout o contexto cancelado en Puma  %v", ctx.Done())
+		LoggerWarning(stringError)
 		return []Items{}
 	}
 

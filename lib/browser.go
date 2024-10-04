@@ -86,7 +86,9 @@ func (brm *BrowserManager) GetPage(ctx context.Context, url string) (*rod.Page, 
 	// Controla la cancelación por contexto
 	select {
 	case <-ctx.Done():
-		fmt.Println("Context cancelado Navegador", ctx.Err())
+		fmt.Println("Context cancelado Navegador ")
+		stringsError := fmt.Sprintf("Context cancelado Navegador %v", ctx.Err())
+		LoggerError(stringsError)
 		defer page.Close() // Cierra la página si el contexto es cancelado
 		return nil, ctx.Err()
 	default:

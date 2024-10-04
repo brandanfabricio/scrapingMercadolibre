@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"webScraping/lib"
 
 	"github.com/go-rod/rod"
 	"golang.org/x/text/unicode/norm"
@@ -28,6 +29,7 @@ func GetDataMercadolibreNike(ctx context.Context, r *http.Request) []Items {
 	}
 	done := make(chan bool)
 	go func() {
+		lib.HandlePanicScraping(done, page)
 		LoggerInfo("Bucando " + search)
 		page.MustElement("#cb1-edit").MustInput(search)
 		page.MustElement(".nav-search-btn").MustClick()
@@ -36,15 +38,24 @@ func GetDataMercadolibreNike(ctx context.Context, r *http.Request) []Items {
 	}()
 	defer page.Close()
 	select {
-	case <-done:
-		listItems := scraping(page, proveedor, producSearch)
-		if len(listItems) <= 0 {
-			listItems = GetDataMercadolibre(ctx, r)
+	case success := <-done:
+		var listItems []Items
+		if success {
+			listItems = scraping(page, proveedor, producSearch)
+			if len(listItems) <= 0 {
+				listItems = GetDataMercadolibre(ctx, r)
+			}
+		} else {
+			listItems = []Items{}
 		}
+
 		fmt.Println("Fin scraping Mercado Libre ")
 		return listItems
 	case <-ctx.Done():
-		fmt.Println("Timeout o contexto cancelado en Puma ", ctx.Done())
+		// fmt.Println("Timeout o contexto cancelado en Puma ", ctx.Done())
+		fmt.Println("Timeout o contexto cancelado en Puma ")
+		stringError := fmt.Sprintf("Timeout o contexto cancelado en Puma  %v", ctx.Done())
+		LoggerWarning(stringError)
 		return []Items{}
 	}
 
@@ -70,6 +81,7 @@ func GetDataMercadolibreAdidas(ctx context.Context, r *http.Request) []Items {
 
 	go func() {
 		// Llenar el formulario y hacer clic en el botón de búsqueda
+		lib.HandlePanicScraping(done, page)
 		page.MustElement("#cb1-edit").MustInput(search)
 		page.MustElement(".nav-search-btn").MustClick()
 		page.MustWaitLoad()
@@ -77,15 +89,24 @@ func GetDataMercadolibreAdidas(ctx context.Context, r *http.Request) []Items {
 	}()
 
 	select {
-	case <-done:
-		listItems := scraping(page, proveedor, producSearch)
-		if len(listItems) <= 0 {
-			listItems = GetDataMercadolibre(ctx, r)
+	case success := <-done:
+		var listItems []Items
+		if success {
+			listItems = scraping(page, proveedor, producSearch)
+			if len(listItems) <= 0 {
+				listItems = GetDataMercadolibre(ctx, r)
+			}
+		} else {
+			listItems = []Items{}
 		}
+
 		fmt.Println("Fin scraping Mercado Libre ")
 		return listItems
 	case <-ctx.Done():
-		fmt.Println("Timeout o contexto cancelado en Puma ", ctx.Done())
+		// fmt.Println("Timeout o contexto cancelado en Puma ", ctx.Done())
+		fmt.Println("Timeout o contexto cancelado en Puma ")
+		stringError := fmt.Sprintf("Timeout o contexto cancelado en Puma  %v", ctx.Done())
+		LoggerWarning(stringError)
 		return []Items{}
 	}
 
@@ -107,6 +128,7 @@ func GetDataMercadolibrePuma(ctx context.Context, r *http.Request) []Items {
 	defer page.Close()
 	done := make(chan bool)
 	go func() {
+		lib.HandlePanicScraping(done, page)
 		page.MustElement("#cb1-edit").MustInput(search)
 		page.MustElement(".nav-search-btn").MustClick()
 		page.MustWaitLoad()
@@ -114,15 +136,25 @@ func GetDataMercadolibrePuma(ctx context.Context, r *http.Request) []Items {
 	}()
 
 	select {
-	case <-done:
-		listItems := scraping(page, proveedor, producSearch)
-		if len(listItems) <= 0 {
-			listItems = GetDataMercadolibre(ctx, r)
+	case success := <-done:
+		var listItems []Items
+		if success {
+			listItems = scraping(page, proveedor, producSearch)
+			if len(listItems) <= 0 {
+				listItems = GetDataMercadolibre(ctx, r)
+			}
+		} else {
+			listItems = []Items{}
+
 		}
+
 		fmt.Println("Fin scraping Mercado Libre ")
 		return listItems
 	case <-ctx.Done():
-		fmt.Println("Timeout o contexto cancelado en Puma ", ctx.Done())
+		// fmt.Println("Timeout o contexto cancelado en Puma ", ctx.Done())
+		fmt.Println("Timeout o contexto cancelado en Puma ")
+		stringError := fmt.Sprintf("Timeout o contexto cancelado en Puma  %v", ctx.Done())
+		LoggerWarning(stringError)
 		return []Items{}
 	}
 }
@@ -153,6 +185,7 @@ func GetDataMercadolibre(ctx context.Context, r *http.Request) []Items {
 	defer page.Close()
 	done := make(chan bool)
 	go func() {
+		defer lib.HandlePanicScraping(done, page)
 		page.MustWaitLoad()
 		page.MustElement("#cb1-edit").MustInput(search)
 		page.MustElement(".nav-search-btn").MustClick()
@@ -160,19 +193,25 @@ func GetDataMercadolibre(ctx context.Context, r *http.Request) []Items {
 	}()
 
 	select {
-	case <-done:
+	case success := <-done:
 		var listItems []Items
-		fils := []string{"Marca:" + marca, "Género:" + genero, "Categorías:" + categoria, "Talle:" + talle, "Material principal:" + material, "Condición:Nuevo", "Tiendas oficiales:Solo tiendas oficiales"}
-		getMarc(page, fils)
-		listItems = scraping(page, "", "")
-		// // Guardar los datos en un archivo JSON
-		fmt.Println("fin")
+		if success {
+			fils := []string{"Marca:" + marca, "Género:" + genero, "Categorías:" + categoria, "Talle:" + talle, "Material principal:" + material, "Condición:Nuevo", "Tiendas oficiales:Solo tiendas oficiales"}
+			getMarc(page, fils)
+			listItems = scraping(page, "", "")
+			// // Guardar los datos en un archivo JSON
+			fmt.Println("fin")
+		} else {
+			listItems = []Items{}
+		}
 		return listItems
 	case <-ctx.Done():
-		fmt.Println("Timeout o contexto cancelado en Puma ", ctx.Done())
+		// fmt.Println("Timeout o contexto cancelado en Puma ", ctx.Done())
+		fmt.Println("Timeout o contexto cancelado en Puma ")
+		stringError := fmt.Sprintf("Timeout o contexto cancelado en Puma  %v", ctx.Done())
+		LoggerWarning(stringError)
 		return []Items{}
 	}
-
 }
 
 func scraping(page *rod.Page, proveedor string, producSearch string) []Items {

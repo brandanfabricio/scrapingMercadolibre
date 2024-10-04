@@ -2,17 +2,19 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"webScraping/lib"
 	"webScraping/scraping"
-	"webScraping/scraping/lib"
 )
 
 func main() {
-
 	defer func() {
 		if r := recover(); r != nil {
-			err := fmt.Sprintf("Recuperado del pánico: %v", r)
+			log.Printf("######################################")
+			err := fmt.Sprintf("Recuperado del pánico General: %v", r)
 			lib.LoggerError(err)
+			log.Printf("######################################")
 		}
 	}()
 
