@@ -22,7 +22,7 @@ func handlePanic() {
 func WebScrapingMercadoLibre(w http.ResponseWriter, r *http.Request) {
 	var mercadolibreItem []Items
 	proveedor := r.URL.Query().Get("marca")
-	ctx, cancel := context.WithTimeout(r.Context(), 70*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
 	switch proveedor {
 	case "PUMA":
@@ -57,7 +57,7 @@ func WebScraping(w http.ResponseWriter, r *http.Request) {
 		"mercadoLibre": []Items{},
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), 70*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
 	// defer bm.KillChromeProcesses()
 	proveedor := r.URL.Query().Get("marca")

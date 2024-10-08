@@ -20,9 +20,10 @@ func GetDataMercadolibreNike(ctx context.Context, r *http.Request) []Items {
 	proveedor := r.URL.Query().Get("proveedor")
 	producSearch := r.URL.Query().Get("marca")
 	search := proveedor
+	urlSearch := fmt.Sprintf("https://listado.mercadolibre.com.ar/%s", search)
 	fmt.Println("entrando en mercado libre ")
 
-	page, err := bm.GetPage(ctx, "https://www.mercadolibre.com.ar/")
+	page, err := bm.GetPage(ctx, urlSearch)
 	if err != nil {
 		fmt.Println("Error al obtener la página:", err)
 		return nil
@@ -31,8 +32,8 @@ func GetDataMercadolibreNike(ctx context.Context, r *http.Request) []Items {
 	go func() {
 		lib.HandlePanicScraping(done, page)
 		LoggerInfo("Bucando " + search)
-		page.MustElement("#cb1-edit").MustInput(search)
-		page.MustElement(".nav-search-btn").MustClick()
+		// page.MustElement("#cb1-edit").MustInput(search)
+		// page.MustElement(".nav-search-btn").MustClick()
 		page.MustWaitLoad()
 		done <- true
 	}()
@@ -66,10 +67,10 @@ func GetDataMercadolibreAdidas(ctx context.Context, r *http.Request) []Items {
 	proveedor := r.URL.Query().Get("proveedor")
 	producSearch := r.URL.Query().Get("marca")
 	search := proveedor
-
+	urlSearch := fmt.Sprintf("https://listado.mercadolibre.com.ar/%s", search)
 	fmt.Println("entrando en mercado libre ")
 
-	page, err := bm.GetPage(ctx, "https://www.mercadolibre.com.ar/")
+	page, err := bm.GetPage(ctx, urlSearch)
 
 	if err != nil {
 		fmt.Println("Error al obtener la página:", err)
@@ -82,8 +83,8 @@ func GetDataMercadolibreAdidas(ctx context.Context, r *http.Request) []Items {
 	go func() {
 		// Llenar el formulario y hacer clic en el botón de búsqueda
 		lib.HandlePanicScraping(done, page)
-		page.MustElement("#cb1-edit").MustInput(search)
-		page.MustElement(".nav-search-btn").MustClick()
+		// page.MustElement("#cb1-edit").MustInput(search)
+		// page.MustElement(".nav-search-btn").MustClick()
 		page.MustWaitLoad()
 		done <- true
 	}()
@@ -109,7 +110,6 @@ func GetDataMercadolibreAdidas(ctx context.Context, r *http.Request) []Items {
 		LoggerWarning(stringError)
 		return []Items{}
 	}
-
 }
 
 func GetDataMercadolibrePuma(ctx context.Context, r *http.Request) []Items {
@@ -119,8 +119,10 @@ func GetDataMercadolibrePuma(ctx context.Context, r *http.Request) []Items {
 	producSearch := r.URL.Query().Get("marca")
 	search := proveedor
 
+	urlSearch := fmt.Sprintf("https://listado.mercadolibre.com.ar/%s", search)
+
 	fmt.Println("entrando en mercado libre ")
-	page, err := bm.GetPage(ctx, "https://www.mercadolibre.com.ar/")
+	page, err := bm.GetPage(ctx, urlSearch)
 	if err != nil {
 		fmt.Println("Error al obtener la página:", err)
 		return nil
@@ -129,8 +131,8 @@ func GetDataMercadolibrePuma(ctx context.Context, r *http.Request) []Items {
 	done := make(chan bool)
 	go func() {
 		lib.HandlePanicScraping(done, page)
-		page.MustElement("#cb1-edit").MustInput(search)
-		page.MustElement(".nav-search-btn").MustClick()
+		// page.MustElement("#cb1-edit").MustInput(search)
+		// page.MustElement(".nav-search-btn").MustClick()
 		page.MustWaitLoad()
 		done <- true
 	}()
@@ -160,13 +162,14 @@ func GetDataMercadolibrePuma(ctx context.Context, r *http.Request) []Items {
 }
 
 func GetDataMercadolibre(ctx context.Context, r *http.Request) []Items {
-	coditm := r.URL.Query().Get("search")
+	coditm := strings.ToLower(strings.Join(strings.Split(r.URL.Query().Get("search"), " "), "-"))
 	marca := r.URL.Query().Get("marca")
 	categoria := r.URL.Query().Get("categoria")
 	genero := r.URL.Query().Get("genero")
 	talle := r.URL.Query().Get("Talle")
 	material := r.URL.Query().Get("material")
-	search := fmt.Sprintf("%s %s %s", categoria, marca, coditm)
+
+	search := fmt.Sprintf("https://listado.mercadolibre.com.ar/%s-%s-%s-%s", categoria, marca, coditm, genero)
 	if material == "SINTETICO" {
 		material = "Sintético"
 	}
@@ -177,7 +180,8 @@ func GetDataMercadolibre(ctx context.Context, r *http.Request) []Items {
 	// page := rod.New().MustConnect().MustPage("https://listado.mercadolibre.com.ar/mochilas-hombre#D[A:mochilas%20hombre%20]")
 	// Launch a headless browser
 	fmt.Println("entrando en mercado libre ")
-	page, err := bm.GetPage(ctx, "https://www.mercadolibre.com.ar/")
+	// page, err := bm.GetPage(ctx, "https://www.mercadolibre.com.ar/")
+	page, err := bm.GetPage(ctx, search)
 	if err != nil {
 		fmt.Println("Error al obtener la página:", err)
 		return nil
@@ -187,8 +191,8 @@ func GetDataMercadolibre(ctx context.Context, r *http.Request) []Items {
 	go func() {
 		defer lib.HandlePanicScraping(done, page)
 		page.MustWaitLoad()
-		page.MustElement("#cb1-edit").MustInput(search)
-		page.MustElement(".nav-search-btn").MustClick()
+		// page.MustElement("#cb1-edit").MustInput(search)
+		// page.MustElement(".nav-search-btn").MustClick()
 		done <- true
 	}()
 
@@ -213,7 +217,6 @@ func GetDataMercadolibre(ctx context.Context, r *http.Request) []Items {
 		return []Items{}
 	}
 }
-
 func scraping(page *rod.Page, proveedor string, producSearch string) []Items {
 	fmt.Println("Iniciado scraping")
 	page.MustWaitLoad()

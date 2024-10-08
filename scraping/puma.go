@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"time"
 	"webScraping/lib"
 
 	"github.com/go-rod/rod"
@@ -32,13 +31,12 @@ func GetDataPuma(ctx context.Context, r *http.Request) []Items {
 		return nil
 	}
 
-	page.Close()
+	defer page.Close()
 
 	done := make(chan bool)
 	go func() {
 		defer lib.HandlePanicScraping(done, page)
 		page.MustWaitLoad()
-		time.Sleep(2 * time.Second)
 		done <- true
 	}()
 

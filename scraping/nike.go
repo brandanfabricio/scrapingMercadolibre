@@ -33,11 +33,12 @@ func GetDataNike(ctx context.Context, r *http.Request) []Items {
 		fmt.Println("Error al obtener la página:", err)
 		return nil
 	}
-	page.Close()
+	defer page.Close()
 	done := make(chan bool)
 
 	go func() {
 		page.MustWaitLoad()
+		lib.HandlePanicScraping(done, page)
 		// checkbox, err := page.Element(`.no-js`)
 		// Verificar si se ha encontrado un CAPTCHA
 		for i := 0; i < 6; i++ {

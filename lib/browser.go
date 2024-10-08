@@ -79,7 +79,7 @@ func (brm *BrowserManager) GetPage(ctx context.Context, url string) (*rod.Page, 
 
 	// Reinicia el temporizador de inactividad cada vez que se llama a GetPage
 	brm.startIdleTimer()
-	page := brm.browser.Timeout(70 * time.Second).CancelTimeout().MustPage(url) // Timeout extendido para manejar internet lento
+	page := brm.browser.Timeout(60 * time.Second).CancelTimeout().MustPage(url) // Timeout extendido para manejar internet lento
 
 	page.Mouse.MustMoveTo(100, 45) // Simular movimiento del mouse para evitar detección de bots
 

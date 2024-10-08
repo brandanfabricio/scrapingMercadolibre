@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 	"webScraping/lib"
 
 	"github.com/go-rod/rod"
@@ -38,7 +37,6 @@ func GetDataAdidas(ctx context.Context, r *http.Request) []Items {
 	go func() {
 		lib.HandlePanicScraping(done, page)
 		page.MustWaitLoad()
-		time.Sleep(2 * time.Second)
 		done <- true
 	}()
 
@@ -158,6 +156,7 @@ func scrapingPage(page *rod.Page, proveedor string) []Items {
 		container := containerPage.First()
 
 		sidebar, err := container.Element(".product-description___1TLpA")
+
 		if err != nil {
 			fmt.Println("ERrrrrrrrrrrro")
 		}
@@ -217,10 +216,13 @@ func scrapingPage(page *rod.Page, proveedor string) []Items {
 		var ListLinksImg []string
 		constainerImages := container.MustElement(".image-grid___1JN2z")
 		linksImgs := constainerImages.MustElements("img")
-		wg.Add(4)
+
 		var link string
 		for i, img := range linksImgs {
+			wg.Add(1)
+			lib.HandlePanic()
 			go func(img *rod.Element) {
+
 				defer wg.Done()
 				// if i+1 >= 4 {
 				// 	break
