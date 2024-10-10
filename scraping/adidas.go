@@ -206,6 +206,7 @@ func scrapingPage(page *rod.Page, proveedor string) []Items {
 		}
 		// gl-price-item--sale
 
+		hola
 		//
 		item.CodProveedor = proveedor
 
