@@ -14,7 +14,7 @@ func HandlePanic() {
 		log.Printf("Recuperado del pánico: %v", r)
 		log.Printf("######################################")
 		// fmt.Println("Timeout o contexto cancelado en Puma ")
-		stringError := fmt.Sprintf("Timeout o contexto cancelado en Puma  %v", r)
+		stringError := fmt.Sprintf("Timeout o contexto cancelado en  %v", &r)
 		LoggerWarning(stringError)
 	}
 }
