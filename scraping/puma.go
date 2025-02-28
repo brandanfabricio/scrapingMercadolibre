@@ -18,9 +18,9 @@ func GetDataPuma(ctx context.Context, r *http.Request) []Items {
 	search := r.URL.Query().Get("search")
 	var urlSearch string
 	if proveedor != "" {
-		urlSearch = fmt.Sprintf("https://ar.puma.com/search?q=%s_*", proveedor)
+		urlSearch = fmt.Sprintf("https://ar.puma.com/segmentifysearch?q=%s_*", proveedor)
 	} else {
-		urlSearch = fmt.Sprintf("https://ar.puma.com/search?q=%s_*", search)
+		urlSearch = fmt.Sprintf("https://ar.puma.com/segmentifysearch?q=%s_*", search)
 	}
 	fmt.Println("entrando en Puma ")
 	fmt.Println(urlSearch)
@@ -28,7 +28,7 @@ func GetDataPuma(ctx context.Context, r *http.Request) []Items {
 
 	page, err := bm.GetPage(ctx, urlSearch)
 	if err != nil {
-		fmt.Println("Error al obtener la página:", err)
+		fmt.Println("Error al obtener la página:", err)
 		return nil
 	}
 
@@ -38,7 +38,7 @@ func GetDataPuma(ctx context.Context, r *http.Request) []Items {
 	go func() {
 		defer lib.HandlePanicScraping(done, page)
 		page.MustWaitLoad()
-		time.Sleep(2 * time.Second)
+		time.Sleep(1 * time.Second)
 		done <- true
 	}()
 
@@ -76,133 +76,26 @@ func scrapingPuma(page *rod.Page, proveedor string) []Items {
 	fmt.Println("iniciando scraping")
 	var listItems []Items
 	// page.MustElementR()
-	// containerPage, err := page.Elements(".sf-product-list-page")
+	containerPage, err := page.Elements(".sf-product-list-page")
 
-	// page.MustElements()
-	containerPage, err := page.Elements(`[data-testid="sf-product-empty-list-page"]`)
 	if err != nil {
 		fmt.Println("contenido no encontrado")
 		return []Items{}
 	}
-	if len(containerPage) > 0 {
+
+	if len(containerPage) <= 0 {
 		fmt.Println("No hay datos")
 		return []Items{}
 	}
 
 	// obtenidndo las card
 	listProduct, err := page.Elements("a.product-tile")
+
 	if err != nil {
 		fmt.Println("No hay datos")
 		return []Items{}
 	}
-	for _, product := range listProduct {
-		item := Items{}
-		// obtenedr descripcion
-		title := product.MustElement("p.chakra-text").MustText()
-		item.Title = title
-		// data-testid="sf-baseprice"
 
-		// exite precio descuento
-		existOldPrice := product.MustElements(`[data-testid="sf-baseprice"]`)
-
-		if len(existOldPrice) > 0 {
-			item.PrecioAntiguo = existOldPrice.First().MustText()
-			discount := product.MustElement("span.chakra-badge").MustText()
-			item.Porcentaje = discount
-		}
-
-		//obtener precio
-		price := product.MustElements(`[data-testid="sf-discountprice"]`).First().MustText()
-		item.Precio = price
-
-		// obtener url para navegar
-		url := product.MustAttribute("href")
-		item.Url = fmt.Sprintf("https://ar.puma.com%s", *url)
-		re := regexp.MustCompile(fmt.Sprintf(`%s_(\d+)`, proveedor))
-		match := re.FindStringSubmatch(*url)
-
-		if len(match) > 1 {
-			codigoFinal := match[0] // 107993-01
-
-			if codigoFinal != "" {
-
-				item.CodProveedor = codigoFinal
-			}
-
-		}
-		// obtener imagenes
-		var listLinkImage []string
-		listImage := product.MustElements("img.chakra-image")
-
-		var link string
-		linkImage, err := listImage.First().Attribute("src")
-
-		if err != nil {
-			link = ""
-		}
-		link = *linkImage
-		listLinkImage = append(listLinkImage, link)
-
-		item.Marca = "Puma"
-		item.Vendedor = "Puma"
-		item.Imagenes = listLinkImage
-
-		listItems = append(listItems, item)
-	}
-
-	// 	// ProductPrice-HighPrice
-
-	// 	var oldPrice string
-	// 	if err == nil {
-	// 		oldPrice = existOldPrice.MustText()
-	// 	} else {
-	// 		oldPrice = ""
-	// 	}
-	// 	item.PrecioAntiguo = oldPrice
-	// 	var porcentage string
-	// 	isPorcentage, err := product.Element(".ProductPrice-PercentageLabel")
-	// 	if err == nil {
-	// 		porcentage = isPorcentage.MustText()
-	// 	} else {
-	// 		porcentage = ""
-	// 	}
-	// 	item.Porcentaje = porcentage
-
-	// 	re := regexp.MustCompile(fmt.Sprintf(`%s-(\d+)`, proveedor))
-	// 	match := re.FindStringSubmatch(*url)
-
-	// 	if len(match) > 1 {
-	// 		codigoFinal := match[0] // 107993-01
-
-	// 		if codigoFinal != "" {
-
-	// 			item.CodProveedor = codigoFinal
-	// 		}
-
-	// 	}
-
-	// }
-	return listItems
-}
-
-func scrapingPumav0(page *rod.Page, proveedor string) []Items {
-	fmt.Println("iniciando scraping")
-	var listItems []Items
-	containerPage, err := page.Elements(".ProductListPage")
-	if err != nil {
-		fmt.Println("contenido no encontrado")
-		return []Items{}
-	}
-	if len(containerPage) <= 0 {
-		fmt.Println("No hay datos")
-		return []Items{}
-	}
-	// obtenidndo las card
-	listProduct, err := containerPage.First().Elements("li.ProductCard")
-	if err != nil {
-		fmt.Println("No hay datos")
-		return []Items{}
-	}
 	for _, product := range listProduct {
 
 		defer func() {
@@ -314,7 +207,7 @@ func scrapingPumav0(page *rod.Page, proveedor string) []Items {
 // 		url := product.MustElement(".ProductCard-Link").MustAttribute("href")
 // 		item.Url = *url
 
-// 		re := regexp.MustCompile(fmt.Sprintf(`%s-(\d+)`, proveedor))
+// 		re := regexp.MustCompile(fmt.Sprintf(%s-(\d+), proveedor))
 // 		match := re.FindStringSubmatch(*url)
 
 // 		if len(match) > 1 {
