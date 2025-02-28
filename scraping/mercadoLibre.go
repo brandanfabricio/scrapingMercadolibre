@@ -231,11 +231,12 @@ func scraping(page *rod.Page, proveedor string, producSearch string) []Items {
 		return []Items{}
 	}
 	element := containe.First().MustElements(".ui-search-layout__item")
+
 	for _, elme := range element {
 		elme.WaitVisible()
 		defer func() {
 			if r := recover(); r != nil {
-				fmt.Println("Recover en scraping")
+				fmt.Println("Error en scraping MercadoLibre ", r)
 			}
 		}()
 
@@ -248,6 +249,7 @@ func scraping(page *rod.Page, proveedor string, producSearch string) []Items {
 		} else {
 			item.Marca = marca.MustText()
 		}
+
 		if isCoincidence {
 			marcCompar := strings.ToLower(item.Marca)
 			producCompar := strings.ToLower(producSearch)
@@ -261,8 +263,16 @@ func scraping(page *rod.Page, proveedor string, producSearch string) []Items {
 				isCoincidence = false
 			}
 		}
+		// title := elme.MustElement("h2").MustText()
+		// Stitle, err := elme.Element("h2")
+		Stitle, err := elme.Element(".poly-component__title-wrapper")
+		var title string
+		if err != nil {
+			title = "---"
+		} else {
+			title = Stitle.MustText()
+		}
 
-		title := elme.MustElement("h2").MustText()
 		item.Title = title
 		isSaller, err := elme.Element("div.poly-card__content > span.poly-component__seller")
 		if err != nil {
@@ -325,7 +335,7 @@ func getMarc(page *rod.Page, fils []string) {
 func applyFilter(page *rod.Page, key, filter string) *rod.Page {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered en applyFilter: ", r)
+			fmt.Println("Error en applyFilter: ", r)
 		}
 	}()
 	for i := 0; i < 1; i++ { // Intentar aplicar el filtro hasta 3 veces

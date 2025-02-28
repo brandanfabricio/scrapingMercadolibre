@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 	"sync"
 	"time"
 	"webScraping/lib"
@@ -39,10 +40,12 @@ func WebScrapingMercadoLibre(w http.ResponseWriter, r *http.Request) {
 		mercadolibreItem = GetDataMercadolibre(ctx, r)
 	}
 
+	if len(mercadolibreItem) < 1 {
+		mercadolibreItem = []Items{}
+	}
 	data := map[string]interface{}{
 		"mercadoLibre": mercadolibreItem,
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(data)
 }
@@ -95,7 +98,11 @@ func WebScraping(w http.ResponseWriter, r *http.Request) {
 
 	for result := range resultChan {
 		for key, value := range result {
-			data[key] = value
+			if reflect.ValueOf(value).Len() <= 0 {
+				data[key] = []Items{}
+			} else {
+				data[key] = value
+			}
 		}
 	}
 

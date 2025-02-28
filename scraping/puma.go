@@ -75,6 +75,9 @@ img.chakra-image
 func scrapingPuma(page *rod.Page, proveedor string) []Items {
 	fmt.Println("iniciando scraping")
 	var listItems []Items
+	// page.MustElementR()
+	// containerPage, err := page.Elements(".sf-product-list-page")
+
 	// page.MustElements()
 	containerPage, err := page.Elements(`[data-testid="sf-product-empty-list-page"]`)
 	if err != nil {
@@ -201,15 +204,20 @@ func scrapingPumav0(page *rod.Page, proveedor string) []Items {
 		return []Items{}
 	}
 	for _, product := range listProduct {
+
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println("Error en scraping Puma ", r)
+			}
+		}()
 		item := Items{}
 		// obtenedr descripcion
-		title := product.MustElement(".ProductCard-Name").MustText()
+		title := product.MustElement(".chakra-text").MustText()
 		item.Title = title
 		//obtener precio
-		price := product.MustElement(".ProductPrice-CurrentPrice").MustText()
+		price := product.MustElement(`[data-testid="sf-current-price"]`).MustText()
 		item.Precio = price
 		// ProductPrice-HighPrice
-
 		existOldPrice, err := product.Element(".ProductPrice-HighPrice")
 		var oldPrice string
 		if err == nil {
@@ -228,29 +236,21 @@ func scrapingPumav0(page *rod.Page, proveedor string) []Items {
 		item.Porcentaje = porcentage
 
 		// obtener url para navegar
-		url := product.MustElement(".ProductCard-Link").MustAttribute("href")
-		item.Url = *url
-
-		re := regexp.MustCompile(fmt.Sprintf(`%s-(\d+)`, proveedor))
+		url := product.MustAttribute("href")
+		item.Url = "https://ar.puma.com" + *url
+		re := regexp.MustCompile(fmt.Sprintf(`%s_\d+`, proveedor))
 		match := re.FindStringSubmatch(*url)
-
-		if len(match) > 1 {
+		if len(match) > 0 {
 			codigoFinal := match[0] // 107993-01
 
-			if codigoFinal != "" {
-
-				item.CodProveedor = codigoFinal
-			}
+			item.CodProveedor = codigoFinal
 
 		}
-
 		// obtener imagenes
 		var listLinkImage []string
-		listImage := product.MustElements("img.Image-Image")
-
+		listImage := product.MustElements("img.chakra-image")
 		var link string
 		linkImage, err := listImage.First().Attribute("src")
-
 		if err != nil {
 			link = ""
 		}
@@ -264,3 +264,86 @@ func scrapingPumav0(page *rod.Page, proveedor string) []Items {
 	}
 	return listItems
 }
+
+// func scrapingPumav1(page *rod.Page, proveedor string) []Items {
+// 	fmt.Println("iniciando scraping")
+// 	var listItems []Items
+// 	containerPage, err := page.Elements(".ProductListPage")
+// 	if err != nil {
+// 		fmt.Println("contenido no encontrado")
+// 		return []Items{}
+// 	}
+// 	if len(containerPage) <= 0 {
+// 		fmt.Println("No hay datos")
+// 		return []Items{}
+// 	}
+// 	// obtenidndo las card
+// 	listProduct, err := containerPage.First().Elements("li.ProductCard")
+// 	if err != nil {
+// 		fmt.Println("No hay datos")
+// 		return []Items{}
+// 	}
+// 	for _, product := range listProduct {
+// 		item := Items{}
+// 		// obtenedr descripcion
+// 		title := product.MustElement(".ProductCard-Name").MustText()
+// 		item.Title = title
+// 		//obtener precio
+// 		price := product.MustElement(".ProductPrice-CurrentPrice").MustText()
+// 		item.Precio = price
+// 		// ProductPrice-HighPrice
+
+// 		existOldPrice, err := product.Element(".ProductPrice-HighPrice")
+// 		var oldPrice string
+// 		if err == nil {
+// 			oldPrice = existOldPrice.MustText()
+// 		} else {
+// 			oldPrice = ""
+// 		}
+// 		item.PrecioAntiguo = oldPrice
+// 		var porcentage string
+// 		isPorcentage, err := product.Element(".ProductPrice-PercentageLabel")
+// 		if err == nil {
+// 			porcentage = isPorcentage.MustText()
+// 		} else {
+// 			porcentage = ""
+// 		}
+// 		item.Porcentaje = porcentage
+
+// 		// obtener url para navegar
+// 		url := product.MustElement(".ProductCard-Link").MustAttribute("href")
+// 		item.Url = *url
+
+// 		re := regexp.MustCompile(fmt.Sprintf(`%s-(\d+)`, proveedor))
+// 		match := re.FindStringSubmatch(*url)
+
+// 		if len(match) > 1 {
+// 			codigoFinal := match[0] // 107993-01
+
+// 			if codigoFinal != "" {
+
+// 				item.CodProveedor = codigoFinal
+// 			}
+
+// 		}
+
+// 		// obtener imagenes
+// 		var listLinkImage []string
+// 		listImage := product.MustElements("img.Image-Image")
+
+// 		var link string
+// 		linkImage, err := listImage.First().Attribute("src")
+
+// 		if err != nil {
+// 			link = ""
+// 		}
+// 		link = *linkImage
+// 		listLinkImage = append(listLinkImage, link)
+
+// 		item.Marca = "Puma"
+// 		item.Vendedor = "Puma"
+// 		item.Imagenes = listLinkImage
+// 		listItems = append(listItems, item)
+// 	}
+// 	return listItems
+// }

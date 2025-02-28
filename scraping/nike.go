@@ -110,6 +110,11 @@ func scrapingNike(page *rod.Page, proveedor string) []Items {
 	}
 	for _, product := range listProduct {
 		item := Items{}
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println("Error en scraping Nike ", r)
+			}
+		}()
 		title := product.MustElement(".vtex-product-summary-2-x-nameContainer").MustText()
 		item.Title = title
 
